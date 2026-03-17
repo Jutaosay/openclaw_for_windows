@@ -1,0 +1,50 @@
+<!-- Copyright (c) OpenClaw. All rights reserved. -->
+<ContentDialog
+    x:Class="OpenClaw.Views.AboutDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="About"
+    CloseButtonText="Close"
+    DefaultButton="Close">
+
+    <StackPanel Spacing="16" MinWidth="360" Padding="0,8">
+        <!-- App Name and Icon -->
+        <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+            <Image Source="/Assets/WindowIcon.ico" Width="48" Height="48" />
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="OpenClaw"
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           FontWeight="SemiBold" />
+                <TextBlock x:Name="VersionText"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           FontSize="13" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Divider -->
+        <Border Height="1"
+                Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                Margin="0,4" />
+
+        <!-- Description -->
+        <TextBlock Text="A native Windows management shell for OpenClaw Gateway, built with WinUI 3 and WebView2."
+                   TextWrapping="Wrap"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   FontSize="13"
+                   TextAlignment="Center" />
+
+        <!-- Links -->
+        <HyperlinkButton Content="View on GitHub"
+                         NavigateUri="https://github.com/openclaw"
+                         HorizontalAlignment="Center" />
+
+        <!-- Copyright -->
+        <TextBlock Text="© 2026 OpenClaw. All rights reserved."
+                   FontSize="12"
+                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                   HorizontalAlignment="Center" />
+    </StackPanel>
+</ContentDialog>
