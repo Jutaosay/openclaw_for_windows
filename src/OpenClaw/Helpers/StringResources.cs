@@ -30,7 +30,6 @@ public static class StringResources
     // --- Top Bar ---
     public static string Reload => Get("Reload");
     public static string Stop => Get("Stop");
-    public static string OpenInBrowser => Get("OpenInBrowser");
     public static string Settings => Get("Settings");
     public static string ClearSession => Get("ClearSession");
 

@@ -37,9 +37,16 @@
                    TextAlignment="Center" />
 
         <!-- Links -->
-        <HyperlinkButton Content="View on GitHub"
-                         NavigateUri="https://github.com/openclaw"
+        <HyperlinkButton Content="GitHub Repository"
+                         NavigateUri="https://github.com/Jutaosay/openclaw_for_windows"
                          HorizontalAlignment="Center" />
+
+        <!-- Developer -->
+        <TextBlock HorizontalAlignment="Center" FontSize="12"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+            <Run Text="Developed by " />
+            <Hyperlink NavigateUri="https://github.com/Jutaosay">@Jutaosay</Hyperlink>
+        </TextBlock>
 
         <!-- Copyright -->
         <TextBlock Text="© 2026 OpenClaw. All rights reserved."

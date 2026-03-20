@@ -8,9 +8,7 @@ using Microsoft.UI.Xaml.Media;
 using OpenClaw.Services;
 using OpenClaw.ViewModels;
 using OpenClaw.Views;
-using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
-using Windows.Storage;
 
 namespace OpenClaw;
 
@@ -44,11 +42,6 @@ public sealed partial class MainWindow : Window
         {
             await ViewModel.InitializeWebViewAsync(MainWebView);
         };
-
-        // Phase 3: Wire up drag-drop on the WebView2 area
-        MainWebView.AllowDrop = true;
-        MainWebView.DragOver += OnDragOver;
-        MainWebView.Drop += OnFileDrop;
 
         // Save window bounds on close
         this.Closed += OnWindowClosed;
@@ -120,31 +113,39 @@ public sealed partial class MainWindow : Window
         App.Logger.Info("Application closing.");
     }
 
-    private async void OnSettingsClick(object sender, RoutedEventArgs e)
+    private SettingsDialog? _settingsWindow;
+
+    private void OnSettingsClick(object sender, RoutedEventArgs e)
     {
-        await ShowSettingsDialogAsync();
+        ShowSettingsWindow();
     }
 
-    private async void OnOpenSettingsRequested()
+    private void OnOpenSettingsRequested()
     {
-        await ShowSettingsDialogAsync();
+        ShowSettingsWindow();
     }
 
-    private async Task ShowSettingsDialogAsync()
+    private void ShowSettingsWindow()
     {
-        var dialog = new SettingsDialog
+        if (_settingsWindow != null)
         {
-            XamlRoot = this.Content.XamlRoot,
+            _settingsWindow.Activate();
+            return;
+        }
+
+        _settingsWindow = new SettingsDialog
+        {
             MainViewModel = this.ViewModel,
         };
 
-        var result = await dialog.ShowAsync();
-
-        if (result == Microsoft.UI.Xaml.Controls.ContentDialogResult.Primary)
+        _settingsWindow.SettingsSaved += () =>
         {
-            // Settings were saved, refresh environments
             ViewModel.RefreshEnvironments();
-        }
+            ApplyTheme(App.Configuration.Settings.AppTheme);
+        };
+
+        _settingsWindow.Closed += (s, e) => _settingsWindow = null;
+        _settingsWindow.Activate();
     }
 
     private void OnError(string message)
@@ -177,33 +178,6 @@ public sealed partial class MainWindow : Window
         await dialog.ShowAsync();
     }
 
-    // --- Phase 3: Drag and Drop ---
-
-    private void OnDragOver(object sender, Microsoft.UI.Xaml.DragEventArgs e)
-    {
-        e.AcceptedOperation = DataPackageOperation.Copy;
-        e.DragUIOverride.Caption = "Drop to upload";
-        e.DragUIOverride.IsCaptionVisible = true;
-        e.DragUIOverride.IsGlyphVisible = true;
-    }
-
-    private async void OnFileDrop(object sender, Microsoft.UI.Xaml.DragEventArgs e)
-    {
-        if (e.DataView.Contains(StandardDataFormats.StorageItems))
-        {
-            var items = await e.DataView.GetStorageItemsAsync();
-            var paths = items
-                .OfType<StorageFile>()
-                .Select(f => f.Path)
-                .Where(p => !string.IsNullOrEmpty(p))
-                .ToArray();
-
-            if (paths.Length > 0)
-            {
-                await ViewModel.HandleFileDropAsync(paths);
-            }
-        }
-    }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
@@ -232,18 +206,6 @@ public sealed partial class MainWindow : Window
         });
     }
 
-    private void OnThemeSelected(object sender, RoutedEventArgs e)
-    {
-        if (sender is MenuFlyoutItem item && item.Tag is string themeStr)
-        {
-            ApplyTheme(themeStr);
-            
-            // Save preference
-            App.Configuration.Settings.AppTheme = themeStr;
-            App.Configuration.Save();
-        }
-    }
-
     private async void OnAboutClick(object sender, RoutedEventArgs e)
     {
         var dialog = new AboutDialog
@@ -257,22 +219,12 @@ public sealed partial class MainWindow : Window
     {
         if (this.Content is FrameworkElement rootElement)
         {
-            switch (themeMode)
+            rootElement.RequestedTheme = themeMode switch
             {
-                case "Light":
-                    rootElement.RequestedTheme = ElementTheme.Light;
-                    ThemeIcon.Glyph = "\uE706"; // Light icon
-                    break;
-                case "Dark":
-                    rootElement.RequestedTheme = ElementTheme.Dark;
-                    ThemeIcon.Glyph = "\uE708"; // Dark icon
-                    break;
-                case "System":
-                default:
-                    rootElement.RequestedTheme = ElementTheme.Default;
-                    ThemeIcon.Glyph = "\uE7F4"; // System icon
-                    break;
-            }
+                "Light" => ElementTheme.Light,
+                "Dark" => ElementTheme.Dark,
+                _ => ElementTheme.Default,
+            };
         }
     }
 }

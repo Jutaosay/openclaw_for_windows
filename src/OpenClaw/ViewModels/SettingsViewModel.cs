@@ -18,6 +18,8 @@ public class SettingsViewModel : INotifyPropertyChanged
     private string _editUrl = string.Empty;
     private bool _editIsDefault;
     private bool _isEditing;
+    private string _selectedTheme = "System";
+    private string _selectedLanguage = "System";
 
     public SettingsViewModel()
     {
@@ -26,6 +28,12 @@ public class SettingsViewModel : INotifyPropertyChanged
         {
             Environments.Add(env.Clone());
         }
+
+        // Load theme preference
+        _selectedTheme = App.Configuration.Settings.AppTheme ?? "System";
+
+        // Load language preference
+        _selectedLanguage = App.Configuration.Settings.AppLanguage ?? "System";
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -65,6 +73,18 @@ public class SettingsViewModel : INotifyPropertyChanged
     {
         get => _isEditing;
         set { _isEditing = value; OnPropertyChanged(); }
+    }
+
+    public string SelectedTheme
+    {
+        get => _selectedTheme;
+        set { _selectedTheme = value; OnPropertyChanged(); }
+    }
+
+    public string SelectedLanguage
+    {
+        get => _selectedLanguage;
+        set { _selectedLanguage = value; OnPropertyChanged(); }
     }
 
     /// <summary>
@@ -145,6 +165,10 @@ public class SettingsViewModel : INotifyPropertyChanged
         {
             App.Configuration.Settings.Environments[0].IsDefault = true;
         }
+
+        // Save theme and language
+        App.Configuration.Settings.AppTheme = SelectedTheme;
+        App.Configuration.Settings.AppLanguage = SelectedLanguage;
 
         App.Configuration.Save();
         App.Logger.Info("Settings saved.");

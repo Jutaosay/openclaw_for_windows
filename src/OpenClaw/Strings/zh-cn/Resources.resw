@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Top Bar -->
+  <data name="Reload" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="OpenInBrowser" xml:space="preserve">
+    <value>在浏览器中打开</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="ClearSession" xml:space="preserve">
+    <value>清除会话</value>
+  </data>
+
+  <!-- Status Bar -->
+  <data name="StatusConnected" xml:space="preserve">
+    <value>已连接</value>
+  </data>
+  <data name="StatusLoading" xml:space="preserve">
+    <value>加载中...</value>
+  </data>
+  <data name="StatusReconnecting" xml:space="preserve">
+    <value>重新连接中...</value>
+  </data>
+  <data name="StatusAuthFailed" xml:space="preserve">
+    <value>身份验证失败</value>
+  </data>
+  <data name="StatusError" xml:space="preserve">
+    <value>连接错误</value>
+  </data>
+  <data name="StatusOffline" xml:space="preserve">
+    <value>离线</value>
+  </data>
+
+  <!-- Settings Dialog -->
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="EnvironmentName" xml:space="preserve">
+    <value>环境名称</value>
+  </data>
+  <data name="GatewayUrl" xml:space="preserve">
+    <value>网关 URL</value>
+  </data>
+  <data name="SetAsDefault" xml:space="preserve">
+    <value>设为默认</value>
+  </data>
+  <data name="AddEnvironment" xml:space="preserve">
+    <value>添加环境</value>
+  </data>
+  <data name="RemoveEnvironment" xml:space="preserve">
+    <value>移除环境</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="NoEnvironments" xml:space="preserve">
+    <value>尚未配置环境，请添加一个以开始使用。</value>
+  </data>
+
+  <!-- App -->
+  <data name="AppDisplayName" xml:space="preserve">
+    <value>OpenClaw 管理器</value>
+  </data>
+
+  <!-- Quick Commands -->
+  <data name="QuickCommands" xml:space="preserve">
+    <value>快捷命令</value>
+  </data>
+  <data name="QuickStop" xml:space="preserve">
+    <value>/stop - 停止生成</value>
+  </data>
+  <data name="QuickStatus" xml:space="preserve">
+    <value>/status - 查看状态</value>
+  </data>
+  <data name="QuickNew" xml:space="preserve">
+    <value>/new - 新对话</value>
+  </data>
+  <data name="QuickQueue" xml:space="preserve">
+    <value>/queue - 队列中断</value>
+  </data>
+
+  <!-- InfoBar and Retry -->
+  <data name="ConnectionIssue" xml:space="preserve">
+    <value>连接问题</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>重试</value>
+  </data>
+  <data name="DevTools" xml:space="preserve">
+    <value>开发者工具</value>
+  </data>
+
+</root>

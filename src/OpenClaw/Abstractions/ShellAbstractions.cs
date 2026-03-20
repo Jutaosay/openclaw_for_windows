@@ -61,15 +61,6 @@ public interface ICommandInjector
 }
 
 /// <summary>
-/// Abstraction for file/image relay into the hosted remote UI.
-/// </summary>
-public interface IFileRelay
-{
-    Task<bool> PasteImageAsync(string base64DataUrl, string mimeType);
-    Task<bool> InjectFilesAsync(string[] filePaths);
-}
-
-/// <summary>
 /// Abstraction for startup diagnostics.
 /// </summary>
 public interface IDiagnosticRunner

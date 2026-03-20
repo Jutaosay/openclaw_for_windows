@@ -2,35 +2,118 @@
 
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using OpenClaw.Models;
 using OpenClaw.ViewModels;
+using Windows.Graphics;
 
 namespace OpenClaw.Views;
 
 /// <summary>
-/// Settings dialog for managing gateway environment configurations.
+/// Settings window with Windows Settings-style sidebar navigation.
+/// Resizable, Mica-backed, independent window.
 /// </summary>
-public sealed partial class SettingsDialog : ContentDialog
+public sealed partial class SettingsDialog : Window
 {
     public SettingsViewModel ViewModel { get; } = new();
 
     /// <summary>
-    /// Gets the main view model so we can invoke diagnostic/dev tools commands.
-    /// This resolves the connection to the MainWindow's view model.
+    /// Gets the main view model for developer tools commands.
     /// </summary>
     public MainViewModel? MainViewModel { get; set; }
+
+    /// <summary>
+    /// Raised when settings are saved, so MainWindow can refresh.
+    /// </summary>
+    public event Action? SettingsSaved;
 
     public SettingsDialog()
     {
         this.InitializeComponent();
-        EnvironmentList.ItemsSource = ViewModel.Environments;
 
-        // Select the first item if available
+        // Window chrome
+        Title = "Settings";
+        SystemBackdrop = new MicaBackdrop();
+        AppWindow.SetIcon("Assets\\WindowIcon.ico");
+
+        // Default size
+        AppWindow.Resize(new SizeInt32(720, 520));
+
+        // Initialize data
+        EnvironmentList.ItemsSource = ViewModel.Environments;
         if (ViewModel.Environments.Count > 0)
         {
             EnvironmentList.SelectedIndex = 0;
         }
+        SetThemeRadioSelection(ViewModel.SelectedTheme);
+        SetLanguageSelection(ViewModel.SelectedLanguage);
+
+        // Select first nav item (Appearance)
+        NavList.SelectedIndex = 0;
     }
+
+    // --- Sidebar navigation ---
+
+    private void OnNavSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (NavList.SelectedItem is ListViewItem item && item.Tag is string tag)
+        {
+            ShowPanel(tag);
+        }
+    }
+
+    private void ShowPanel(string tag)
+    {
+        PanelAppearance.Visibility = tag == "Appearance" ? Visibility.Visible : Visibility.Collapsed;
+        PanelLanguage.Visibility = tag == "Language" ? Visibility.Visible : Visibility.Collapsed;
+        PanelEnvironments.Visibility = tag == "Environments" ? Visibility.Visible : Visibility.Collapsed;
+        PanelDevTools.Visibility = tag == "DevTools" ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // --- Theme ---
+
+    private void SetThemeRadioSelection(string theme)
+    {
+        ThemeRadioButtons.SelectedIndex = theme switch
+        {
+            "Light" => 0,
+            "Dark" => 1,
+            _ => 2,
+        };
+    }
+
+    private void OnThemeRadioSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ThemeRadioButtons.SelectedItem is RadioButton radio && radio.Tag is string themeTag)
+        {
+            ViewModel.SelectedTheme = themeTag;
+        }
+    }
+
+    // --- Language ---
+
+    private void SetLanguageSelection(string language)
+    {
+        for (int i = 0; i < LanguageComboBox.Items.Count; i++)
+        {
+            if (LanguageComboBox.Items[i] is ComboBoxItem item && item.Tag is string tag && tag == language)
+            {
+                LanguageComboBox.SelectedIndex = i;
+                return;
+            }
+        }
+        LanguageComboBox.SelectedIndex = 0; // Default to System
+    }
+
+    private void OnLanguageSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (LanguageComboBox.SelectedItem is ComboBoxItem item && item.Tag is string langTag)
+        {
+            ViewModel.SelectedLanguage = langTag;
+        }
+    }
+
+    // --- Environment CRUD ---
 
     private void OnEnvironmentSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -49,7 +132,6 @@ public sealed partial class SettingsDialog : ContentDialog
     private void OnRemoveClick(object sender, RoutedEventArgs e)
     {
         ViewModel.RemoveEnvironment();
-
         if (ViewModel.Environments.Count > 0)
         {
             EnvironmentList.SelectedIndex = 0;
@@ -59,8 +141,6 @@ public sealed partial class SettingsDialog : ContentDialog
     private void OnApplyClick(object sender, RoutedEventArgs e)
     {
         ViewModel.ApplyEdit();
-
-        // Force refresh of the list
         var selected = EnvironmentList.SelectedIndex;
         EnvironmentList.ItemsSource = null;
         EnvironmentList.ItemsSource = ViewModel.Environments;
@@ -70,42 +150,55 @@ public sealed partial class SettingsDialog : ContentDialog
         }
     }
 
-    private void OnSaveClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    // --- Save / Cancel ---
+
+    private void OnSaveClick(object sender, RoutedEventArgs e)
     {
-        // Apply any pending edit first
         if (ViewModel.IsEditing)
         {
             ViewModel.ApplyEdit();
         }
 
-        if (!ViewModel.SaveAll())
+        if (ViewModel.SaveAll())
         {
-            args.Cancel = true;
+            // Apply language override immediately (full effect after restart)
+            App.ApplyLanguage(ViewModel.SelectedLanguage);
+            SettingsSaved?.Invoke();
+            this.Close();
+        }
+        else
+        {
             ValidationInfoBar.IsOpen = true;
         }
     }
 
+    private void OnCancelClick(object sender, RoutedEventArgs e)
+    {
+        this.Close();
+    }
+
+    // --- Developer Tools ---
+
     private void OnRunDiagnosticsClick(object sender, RoutedEventArgs e)
     {
         MainViewModel?.RunDiagnosticsCommand.Execute(null);
-        this.Hide(); // Close settings when running diagnostics
+        this.Close();
     }
 
     private void OnViewLogsClick(object sender, RoutedEventArgs e)
     {
         MainViewModel?.ViewLogsCommand.Execute(null);
-        // Do not close settings dialog
     }
 
     private void OnDevToolsClick(object sender, RoutedEventArgs e)
     {
         MainViewModel?.DevToolsCommand.Execute(null);
-        this.Hide(); // Developer tools opens external window
+        this.Close();
     }
 
     private void OnClearSessionClick(object sender, RoutedEventArgs e)
     {
         MainViewModel?.ClearSessionCommand.Execute(null);
-        this.Hide(); // User needs to interact with main window/reload
+        this.Close();
     }
 }

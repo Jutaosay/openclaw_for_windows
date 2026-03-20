@@ -8,9 +8,6 @@ using Microsoft.UI.Xaml.Controls;
 using OpenClaw.Helpers;
 using OpenClaw.Models;
 using OpenClaw.Services;
-using Windows.ApplicationModel.DataTransfer;
-using Windows.Storage;
-using Windows.Storage.Streams;
 
 namespace OpenClaw.ViewModels;
 
@@ -37,7 +34,6 @@ public class MainViewModel : INotifyPropertyChanged
         // Initialize commands
         ReloadCommand = new SimpleCommand(OnReload);
         StopCommand = new SimpleCommand(async () => await OnStopAsync());
-        OpenInBrowserCommand = new SimpleCommand(OnOpenInBrowser);
         ClearSessionCommand = new SimpleCommand(async () => await OnClearSessionAsync());
         OpenSettingsCommand = new SimpleCommand(() => OpenSettingsRequested?.Invoke());
         RetryCommand = new SimpleCommand(OnRetry);
@@ -46,7 +42,6 @@ public class MainViewModel : INotifyPropertyChanged
         QuickStatusCommand = new SimpleCommand(async () => await OnQuickCommandAsync("/status"));
         QuickNewCommand = new SimpleCommand(async () => await OnQuickCommandAsync("/new"));
         QuickQueueCommand = new SimpleCommand(async () => await OnQuickCommandAsync("/queue"));
-        PasteImageCommand = new SimpleCommand(async () => await OnPasteImageAsync());
         RunDiagnosticsCommand = new SimpleCommand(async () => await OnRunDiagnosticsAsync());
         ViewLogsCommand = new SimpleCommand(() => ViewLogsRequested?.Invoke());
 
@@ -154,7 +149,6 @@ public class MainViewModel : INotifyPropertyChanged
 
     public ICommand ReloadCommand { get; }
     public ICommand StopCommand { get; }
-    public ICommand OpenInBrowserCommand { get; }
     public ICommand ClearSessionCommand { get; }
     public ICommand OpenSettingsCommand { get; }
     public ICommand RetryCommand { get; }
@@ -163,7 +157,6 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand QuickStatusCommand { get; }
     public ICommand QuickNewCommand { get; }
     public ICommand QuickQueueCommand { get; }
-    public ICommand PasteImageCommand { get; }
     public ICommand RunDiagnosticsCommand { get; }
     public ICommand ViewLogsCommand { get; }
 
@@ -248,26 +241,6 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private void OnOpenInBrowser()
-    {
-        var url = _webViewService.GetCurrentUrl() ?? _selectedEnvironment?.GatewayUrl;
-        if (!string.IsNullOrEmpty(url))
-        {
-            App.Logger.Info($"Opening in browser: {url}");
-            try
-            {
-                var psi = new System.Diagnostics.ProcessStartInfo(url)
-                {
-                    UseShellExecute = true,
-                };
-                System.Diagnostics.Process.Start(psi);
-            }
-            catch (Exception ex)
-            {
-                App.Logger.Error($"Failed to open browser: {ex.Message}");
-            }
-        }
-    }
 
     private async Task OnClearSessionAsync()
     {
@@ -318,68 +291,6 @@ public class MainViewModel : INotifyPropertyChanged
     public void DismissDiagnostics()
     {
         IsDiagnosticVisible = false;
-    }
-
-    // --- Phase 3: File / Image handling ---
-
-    private async Task OnPasteImageAsync()
-    {
-        try
-        {
-            var clipboardContent = Clipboard.GetContent();
-            if (clipboardContent.Contains(StandardDataFormats.Bitmap))
-            {
-                var streamRef = await clipboardContent.GetBitmapAsync();
-                using var stream = await streamRef.OpenReadAsync();
-
-                using var reader = new DataReader(stream);
-                await reader.LoadAsync((uint)stream.Size);
-                var bytes = new byte[stream.Size];
-                reader.ReadBytes(bytes);
-
-                var base64 = Convert.ToBase64String(bytes);
-                var dataUrl = $"data:image/png;base64,{base64}";
-
-                var result = await _webViewService.PasteImageFromClipboardAsync(dataUrl, "image/png");
-                if (!result)
-                {
-                    App.Logger.Warning("Clipboard paste: no target found in remote UI.");
-                }
-            }
-            else if (clipboardContent.Contains(StandardDataFormats.StorageItems))
-            {
-                var items = await clipboardContent.GetStorageItemsAsync();
-                var paths = items
-                    .OfType<StorageFile>()
-                    .Select(f => f.Path)
-                    .Where(p => !string.IsNullOrEmpty(p))
-                    .ToArray();
-
-                if (paths.Length > 0)
-                {
-                    await _webViewService.InjectFilesAsync(paths);
-                }
-            }
-            else
-            {
-                App.Logger.Info("Clipboard does not contain image or file data.");
-            }
-        }
-        catch (Exception ex)
-        {
-            App.Logger.Error($"Clipboard paste failed: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Handles files dropped onto the window / WebView2 area.
-    /// Called from the code-behind drag-drop handler.
-    /// </summary>
-    public async Task HandleFileDropAsync(string[] filePaths)
-    {
-        if (filePaths.Length == 0) return;
-        App.Logger.Info($"Files dropped: {string.Join(", ", filePaths)}");
-        await _webViewService.InjectFilesAsync(filePaths);
     }
 
     private void OnConnectionStateChanged(ConnectionState state)

@@ -39,11 +39,32 @@ public partial class App : Application
         Configuration.Load();
         Logger.Info("Configuration loaded.");
 
+        // Apply saved language preference
+        ApplyLanguage(Configuration.Settings.AppLanguage);
+
         _mainWindow = new MainWindow();
         MainWindow = _mainWindow;
         _mainWindow.Activate();
 
         Logger.Info("Main window activated.");
+    }
+
+    /// <summary>
+    /// Applies the language override. "System" skips override to follow OS language.
+    /// </summary>
+    public static void ApplyLanguage(string language)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(language) && language != "System")
+            {
+                Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = language;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Language override failed: {ex.Message}");
+        }
     }
 
     private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)

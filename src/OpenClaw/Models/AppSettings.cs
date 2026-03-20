@@ -43,6 +43,11 @@ public class AppSettings
     /// Gets or sets the preferred application theme (System, Light, Dark).
     /// </summary>
     public string AppTheme { get; set; } = "System";
+
+    /// <summary>
+    /// Gets or sets the preferred application language (System, en-US, zh-CN).
+    /// </summary>
+    public string AppLanguage { get; set; } = "System";
 }
 
 /// <summary>

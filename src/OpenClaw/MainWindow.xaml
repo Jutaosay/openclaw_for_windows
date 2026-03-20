@@ -119,54 +119,6 @@
                 <!-- Separator -->
                 <AppBarSeparator />
 
-                <!-- Paste Image (Ctrl+Shift+V) -->
-                <Button x:Name="PasteButton"
-                        Command="{x:Bind ViewModel.PasteImageCommand}"
-                        ToolTipService.ToolTip="Paste Image (Ctrl+Shift+V)"
-                        Style="{StaticResource SubtleButtonStyle}">
-                    <FontIcon Glyph="&#xE77F;" FontSize="14" />
-                    <Button.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="V" Modifiers="Control,Shift" />
-                    </Button.KeyboardAccelerators>
-                </Button>
-
-                <!-- Open in Browser -->
-                <Button x:Name="OpenInBrowserButton"
-                        Command="{x:Bind ViewModel.OpenInBrowserCommand}"
-                        ToolTipService.ToolTip="Open in Browser"
-                        Style="{StaticResource SubtleButtonStyle}">
-                    <FontIcon Glyph="&#xE774;" FontSize="14" />
-                </Button>
-
-                <!-- Separator -->
-                <AppBarSeparator />
-
-                <!-- Theme Switcher -->
-                <DropDownButton x:Name="ThemeButton"
-                                ToolTipService.ToolTip="App Theme"
-                                Style="{StaticResource SubtleDropDownButtonStyle}">
-                    <FontIcon x:Name="ThemeIcon" Glyph="&#xE7F4;" FontSize="14" />
-                    <DropDownButton.Flyout>
-                        <MenuFlyout Placement="Bottom">
-                            <MenuFlyoutItem Text="Light" Click="OnThemeSelected" Tag="Light">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE706;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="Dark" Click="OnThemeSelected" Tag="Dark">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE708;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="System Default" Click="OnThemeSelected" Tag="System">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE7F4;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                        </MenuFlyout>
-                    </DropDownButton.Flyout>
-                </DropDownButton>
-
                 <!-- Settings -->
                 <Button x:Name="SettingsButton"
                         Click="OnSettingsClick"
