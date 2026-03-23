@@ -152,7 +152,8 @@ dotnet build src\OpenClaw\OpenClaw.csproj -r win-x64
 | 🛑 Stop | JS injection to send `/stop` command (Esc) / JS 注入发送 `/stop` 命令 |
 | ⚡ Quick Commands | Flyout: /stop, /status, /new, /queue / 快捷命令下拉菜单 |
 | 📊 Connection Status | Real-time status bar + error InfoBar with retry / 实时状态栏 + 错误横幅 |
-| 🔁 Auto-Reconnect | 3 retries with 3s delay on connection failure / 连接失败自动重试3次 |
+| 🔁 Auto-Reconnect | 3 retries with 3s delay on navigation failure / 连接失败自动重试3次 |
+| 💓 Heartbeat | Periodic HTTP probe (30s) with auto-reconnect on 3 consecutive failures / 心跳检测 30s 间隔，3 次失败自动重连 |
 | 🎨 Theme Switcher | Light / Dark / System theme in Settings / 设置中切换亮色/暗色/跟随系统主题 |
 | 🌐 Language | English / 中文 in Settings / 设置中切换英文/中文界面 |
 | 🔍 Diagnostics | WebView2 runtime check, network probe, session detection / 运行时检查 |
@@ -217,6 +218,12 @@ All local data is stored under `%LOCALAPPDATA%\OpenClaw\`:
 
 ## Changelog / 更新日志
 
+### v1.0.1 (2026-03-22)
+
+- 💓 **心跳检测**：每 30s 向 Gateway 发送 HTTP HEAD 探测，连续 3 次失败自动刷新重连
+- 新增 `HeartbeatIntervalSeconds` 设置项（默认 30，设为 0 可禁用）
+- 新增心跳丢失状态提示（中英双语）
+
 ### v1.0.0 (2026-03-19)
 
 - 🎉 **正式发布**
@@ -254,4 +261,4 @@ TBD
 
 *Developed by [@Jutaosay](https://github.com/Jutaosay) · [GitHub Repository](https://github.com/Jutaosay/openclaw_for_windows)*
 
-*Last updated / 最后更新: 2026-03-19 (v1.0.0)*
+*Last updated / 最后更新: 2026-03-22 (v1.0.1)*

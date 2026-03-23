@@ -1,7 +1,7 @@
 Add-Type -AssemblyName System.Drawing
 
-$sourcePath = "C:\Users\Zen\Desktop\icon.PNG"
-$outDir = "c:\Users\Zen\Repo\Codings\Claw_winui3\src\OpenClawManager\Assets"
+$sourcePath = "C:\Users\Zen\.gemini\antigravity\brain\f0bb5d54-09e0-4164-8bc6-0176c19dc5f6\openclaw_icon_v3_1774239639441.png"
+$outDir = "c:\Users\Zen\Repo\Codings\Claw_winui3\src\OpenClaw\Assets"
 
 if (-not (Test-Path $sourcePath)) {
     Write-Host "Source image not found: $sourcePath"
