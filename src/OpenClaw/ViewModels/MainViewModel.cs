@@ -1,4 +1,4 @@
-// Copyright (c) OpenClaw. All rights reserved.
+// Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -48,6 +48,7 @@ public class MainViewModel : INotifyPropertyChanged
         // Wire up service events
         _webViewService.ConnectionStateChanged += OnConnectionStateChanged;
         _webViewService.NavigationErrorOccurred += OnNavigationError;
+        _webViewService.HeartbeatFailed += OnHeartbeatFailed;
 
         // Load environments
         LoadEnvironments();
@@ -321,6 +322,17 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 IsErrorVisible = false;
             }
+
+            // Heartbeat lifecycle: start only when connected, stop otherwise
+            if (state == ConnectionState.Connected && _selectedEnvironment is not null)
+            {
+                var interval = App.Configuration.Settings.HeartbeatIntervalSeconds;
+                _webViewService.StartHeartbeat(_selectedEnvironment.GatewayUrl, interval);
+            }
+            else
+            {
+                _webViewService.StopHeartbeat();
+            }
         });
     }
 
@@ -331,6 +343,20 @@ public class MainViewModel : INotifyPropertyChanged
             ErrorMessage = message;
             IsErrorVisible = true;
             ErrorOccurred?.Invoke(message);
+        });
+    }
+
+    private void OnHeartbeatFailed()
+    {
+        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            StatusMessage = StringResources.StatusHeartbeatFailed;
+            StatusIcon = "\uE72C"; // Refresh icon
+            ConnectionState = ConnectionState.Reconnecting;
+            ErrorMessage = StringResources.StatusHeartbeatFailed;
+            IsErrorVisible = true;
+            ShowRetryButton = false;
+            App.Logger.Warning("Heartbeat failure — auto-reconnecting.");
         });
     }
 

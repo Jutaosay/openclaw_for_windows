@@ -139,4 +139,9 @@
     <value>开发者工具</value>
   </data>
 
+  <!-- 心跳检测 -->
+  <data name="StatusHeartbeatFailed" xml:space="preserve">
+    <value>心跳丢失 — 正在重连…</value>
+  </data>
+
 </root>

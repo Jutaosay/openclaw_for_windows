@@ -1,4 +1,4 @@
-<!-- Copyright (c) OpenClaw. All rights reserved. -->
+<!-- Copyright (c) Lanstack @openclaw. All rights reserved. -->
 <ContentDialog
     x:Class="OpenClaw.Views.AboutDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -49,7 +49,7 @@
         </TextBlock>
 
         <!-- Copyright -->
-        <TextBlock Text="© 2026 OpenClaw. All rights reserved."
+        <TextBlock Text="© 2026 Lanstack @openclaw. All rights reserved."
                    FontSize="12"
                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                    HorizontalAlignment="Center" />

@@ -1,4 +1,4 @@
-// Copyright (c) OpenClaw. All rights reserved.
+// Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.Web.WebView2.Core;
 

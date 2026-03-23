@@ -1,4 +1,4 @@
-// Copyright (c) OpenClaw. All rights reserved.
+// Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.UI.Xaml.Controls;
 

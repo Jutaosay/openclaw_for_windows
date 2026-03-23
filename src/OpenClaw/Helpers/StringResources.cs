@@ -1,4 +1,4 @@
-// Copyright (c) OpenClaw. All rights reserved.
+// Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.Windows.ApplicationModel.Resources;
 
@@ -40,6 +40,7 @@ public static class StringResources
     public static string StatusAuthFailed => Get("StatusAuthFailed");
     public static string StatusError => Get("StatusError");
     public static string StatusOffline => Get("StatusOffline");
+    public static string StatusHeartbeatFailed => Get("StatusHeartbeatFailed");
 
     // --- Settings Dialog ---
     public static string SettingsTitle => Get("SettingsTitle");

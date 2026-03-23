@@ -1,4 +1,4 @@
-// Copyright (c) OpenClaw. All rights reserved.
+// Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using System.Text.Json.Serialization;
 
@@ -48,6 +48,12 @@ public class AppSettings
     /// Gets or sets the preferred application language (System, en-US, zh-CN).
     /// </summary>
     public string AppLanguage { get; set; } = "System";
+
+    /// <summary>
+    /// Gets or sets the heartbeat probe interval in seconds. 0 = disabled.
+    /// Default is 30s, which works well with Cloudflare Tunnel / reverse proxy idle timeouts (60-100s).
+    /// </summary>
+    public int HeartbeatIntervalSeconds { get; set; } = 30;
 }
 
 /// <summary>

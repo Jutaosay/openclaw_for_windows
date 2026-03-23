@@ -1,4 +1,4 @@
-// Copyright (c) OpenClaw. All rights reserved.
+// Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -225,6 +225,28 @@ public sealed partial class MainWindow : Window
                 "Dark" => ElementTheme.Dark,
                 _ => ElementTheme.Default,
             };
+
+            // Update title bar colors to match theme
+            var isDark = rootElement.ActualTheme == ElementTheme.Dark;
+            var titleBar = AppWindow.TitleBar;
+
+            titleBar.ForegroundColor = isDark ? Colors.White : Colors.Black;
+            titleBar.BackgroundColor = isDark
+                ? Windows.UI.Color.FromArgb(255, 32, 32, 32)
+                : Windows.UI.Color.FromArgb(255, 243, 243, 243);
+            titleBar.InactiveForegroundColor = isDark
+                ? Windows.UI.Color.FromArgb(255, 160, 160, 160)
+                : Windows.UI.Color.FromArgb(255, 128, 128, 128);
+            titleBar.InactiveBackgroundColor = titleBar.BackgroundColor;
+
+            titleBar.ButtonForegroundColor = titleBar.ForegroundColor;
+            titleBar.ButtonBackgroundColor = titleBar.BackgroundColor;
+            titleBar.ButtonInactiveForegroundColor = titleBar.InactiveForegroundColor;
+            titleBar.ButtonInactiveBackgroundColor = titleBar.InactiveBackgroundColor;
+            titleBar.ButtonHoverForegroundColor = isDark ? Colors.White : Colors.Black;
+            titleBar.ButtonHoverBackgroundColor = isDark
+                ? Windows.UI.Color.FromArgb(255, 51, 51, 51)
+                : Windows.UI.Color.FromArgb(255, 229, 229, 229);
         }
     }
 }

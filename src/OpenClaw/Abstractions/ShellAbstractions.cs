@@ -1,4 +1,4 @@
-// Copyright (c) OpenClaw. All rights reserved.
+// Copyright (c) Lanstack @openclaw. All rights reserved.
 // Phase 5: Upstream-compatible abstraction interfaces.
 // These isolate the generic shell/hosting concepts from OpenClaw-specific logic,
 // enabling potential reuse in OpenClaw Control or other WebView2-based shells.

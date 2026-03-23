@@ -1,4 +1,4 @@
-// Copyright (c) OpenClaw. All rights reserved.
+// Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
@@ -19,6 +19,13 @@ public class WebViewService
     private const int MaxRetries = 3;
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(3);
 
+    // Heartbeat fields
+    private PeriodicTimer? _heartbeatTimer;
+    private CancellationTokenSource? _heartbeatCts;
+    private int _heartbeatFailureCount;
+    private const int HeartbeatFailureThreshold = 3;
+    private static readonly HttpClient HeartbeatHttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
+
     /// <summary>
     /// Raised when the connection/loading state changes.
     /// </summary>
@@ -28,6 +35,11 @@ public class WebViewService
     /// Raised when a navigation error occurs.
     /// </summary>
     public event Action<string>? NavigationErrorOccurred;
+
+    /// <summary>
+    /// Raised when the heartbeat detects the gateway is unreachable (after threshold failures).
+    /// </summary>
+    public event Action? HeartbeatFailed;
 
     /// <summary>
     /// Gets the current connection state.
@@ -289,6 +301,106 @@ public class WebViewService
     public string? GetCurrentUrl()
     {
         return _webView?.CoreWebView2?.Source;
+    }
+
+    /// <summary>
+    /// Starts the periodic heartbeat probe against the given gateway URL.
+    /// If the interval is 0 or negative, the heartbeat is disabled.
+    /// </summary>
+    public void StartHeartbeat(string gatewayUrl, int intervalSeconds)
+    {
+        StopHeartbeat();
+
+        if (intervalSeconds <= 0 || string.IsNullOrEmpty(gatewayUrl))
+        {
+            App.Logger.Info("Heartbeat disabled (interval=0 or no URL).");
+            return;
+        }
+
+        _heartbeatFailureCount = 0;
+        _heartbeatCts = new CancellationTokenSource();
+        _heartbeatTimer = new PeriodicTimer(TimeSpan.FromSeconds(intervalSeconds));
+
+        App.Logger.Info($"Heartbeat started: interval={intervalSeconds}s, url={gatewayUrl}");
+        _ = RunHeartbeatLoopAsync(gatewayUrl, _heartbeatCts.Token);
+    }
+
+    /// <summary>
+    /// Stops the periodic heartbeat probe.
+    /// </summary>
+    public void StopHeartbeat()
+    {
+        if (_heartbeatCts is not null)
+        {
+            _heartbeatCts.Cancel();
+            _heartbeatCts.Dispose();
+            _heartbeatCts = null;
+        }
+
+        _heartbeatTimer?.Dispose();
+        _heartbeatTimer = null;
+        _heartbeatFailureCount = 0;
+    }
+
+    private async Task RunHeartbeatLoopAsync(string gatewayUrl, CancellationToken token)
+    {
+        try
+        {
+            while (await _heartbeatTimer!.WaitForNextTickAsync(token))
+            {
+                if (token.IsCancellationRequested) break;
+
+                var isAlive = await ProbeGatewayAsync(gatewayUrl);
+
+                if (isAlive)
+                {
+                    if (_heartbeatFailureCount > 0)
+                    {
+                        App.Logger.Info($"Heartbeat recovered after {_heartbeatFailureCount} failure(s).");
+                    }
+                    _heartbeatFailureCount = 0;
+                }
+                else
+                {
+                    _heartbeatFailureCount++;
+                    App.Logger.Warning($"Heartbeat failure {_heartbeatFailureCount}/{HeartbeatFailureThreshold}.");
+
+                    if (_heartbeatFailureCount >= HeartbeatFailureThreshold)
+                    {
+                        App.Logger.Warning("Heartbeat threshold reached — triggering auto-reconnect.");
+                        HeartbeatFailed?.Invoke();
+
+                        // Stop heartbeat; it will restart after successful reconnect
+                        StopHeartbeat();
+                        Reload();
+                        return;
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when StopHeartbeat() is called
+        }
+        catch (Exception ex)
+        {
+            App.Logger.Error($"Heartbeat loop error: {ex.Message}");
+        }
+    }
+
+    private static async Task<bool> ProbeGatewayAsync(string url)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Head, url);
+            using var response = await HeartbeatHttpClient.SendAsync(request);
+            // Any response (even 4xx) means the server is reachable
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // --- Event handlers ---

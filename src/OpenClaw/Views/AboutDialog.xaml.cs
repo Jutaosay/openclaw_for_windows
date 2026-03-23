@@ -1,4 +1,4 @@
-// Copyright (c) OpenClaw. All rights reserved.
+// Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using System.Reflection;
 using Microsoft.UI.Xaml.Controls;
@@ -17,6 +17,6 @@ public sealed partial class AboutDialog : ContentDialog
         var version = Assembly.GetExecutingAssembly().GetName().Version;
         VersionText.Text = version is not null
             ? $"Version {version.Major}.{version.Minor}.{version.Build}"
-            : "Version 1.0.0";
+            : "Version 1.0.1";
     }
 }

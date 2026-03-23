@@ -139,4 +139,9 @@
     <value>Developer Tools</value>
   </data>
 
+  <!-- Heartbeat -->
+  <data name="StatusHeartbeatFailed" xml:space="preserve">
+    <value>Heartbeat lost — reconnecting…</value>
+  </data>
+
 </root>
