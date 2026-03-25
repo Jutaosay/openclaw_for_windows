@@ -56,7 +56,11 @@ public partial class App : Application
     {
         try
         {
-            if (!string.IsNullOrEmpty(language) && language != "System")
+            if (string.IsNullOrEmpty(language) || language == "System")
+            {
+                Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = string.Empty;
+            }
+            else
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = language;
             }
@@ -70,6 +74,5 @@ public partial class App : Application
     private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
         Logger.Error($"Unhandled exception: {e.Exception}");
-        e.Handled = true;
     }
 }

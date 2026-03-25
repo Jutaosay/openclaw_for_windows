@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenClaw.Helpers;
 using OpenClaw.Models;
@@ -31,26 +32,17 @@ public class MainViewModel : INotifyPropertyChanged
 
     public MainViewModel()
     {
-        // Initialize commands
-        ReloadCommand = new SimpleCommand(OnReload);
-        StopCommand = new SimpleCommand(async () => await OnStopAsync());
         ClearSessionCommand = new SimpleCommand(async () => await OnClearSessionAsync());
         OpenSettingsCommand = new SimpleCommand(() => OpenSettingsRequested?.Invoke());
         RetryCommand = new SimpleCommand(OnRetry);
         DevToolsCommand = new SimpleCommand(OnDevTools);
-        QuickStopCommand = new SimpleCommand(async () => await OnQuickCommandAsync("/stop"));
-        QuickStatusCommand = new SimpleCommand(async () => await OnQuickCommandAsync("/status"));
-        QuickNewCommand = new SimpleCommand(async () => await OnQuickCommandAsync("/new"));
-        QuickQueueCommand = new SimpleCommand(async () => await OnQuickCommandAsync("/queue"));
         RunDiagnosticsCommand = new SimpleCommand(async () => await OnRunDiagnosticsAsync());
         ViewLogsCommand = new SimpleCommand(() => ViewLogsRequested?.Invoke());
 
-        // Wire up service events
         _webViewService.ConnectionStateChanged += OnConnectionStateChanged;
         _webViewService.NavigationErrorOccurred += OnNavigationError;
         _webViewService.HeartbeatFailed += OnHeartbeatFailed;
 
-        // Load environments
         LoadEnvironments();
     }
 
@@ -71,8 +63,6 @@ public class MainViewModel : INotifyPropertyChanged
     /// </summary>
     public event Action<string>? ErrorOccurred;
 
-    // --- Properties ---
-
     public ObservableCollection<EnvironmentConfig> Environments { get; } = [];
 
     public EnvironmentConfig? SelectedEnvironment
@@ -85,6 +75,7 @@ public class MainViewModel : INotifyPropertyChanged
                 _selectedEnvironment = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(CurrentUrl));
+                OnPropertyChanged(nameof(SelectedEnvironmentName));
                 OnEnvironmentChanged();
             }
         }
@@ -92,76 +83,110 @@ public class MainViewModel : INotifyPropertyChanged
 
     public string CurrentUrl => _selectedEnvironment?.GatewayUrl ?? string.Empty;
 
+    public string SelectedEnvironmentName => _selectedEnvironment?.Name ?? string.Empty;
+
     public string StatusMessage
     {
         get => _statusMessage;
-        private set { _statusMessage = value; OnPropertyChanged(); }
+        private set
+        {
+            _statusMessage = value;
+            OnPropertyChanged();
+        }
     }
 
     public string StatusIcon
     {
         get => _statusIcon;
-        private set { _statusIcon = value; OnPropertyChanged(); }
+        private set
+        {
+            _statusIcon = value;
+            OnPropertyChanged();
+        }
     }
 
     public ConnectionState ConnectionState
     {
         get => _connectionState;
-        private set { _connectionState = value; OnPropertyChanged(); }
+        private set
+        {
+            _connectionState = value;
+            OnPropertyChanged();
+        }
     }
 
     public bool IsLoading
     {
         get => _isLoading;
-        private set { _isLoading = value; OnPropertyChanged(); }
+        private set
+        {
+            _isLoading = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(LoadingVisibility));
+        }
     }
+
+    public Visibility LoadingVisibility => IsLoading ? Visibility.Visible : Visibility.Collapsed;
 
     public string ErrorMessage
     {
         get => _errorMessage;
-        private set { _errorMessage = value; OnPropertyChanged(); }
+        private set
+        {
+            _errorMessage = value;
+            OnPropertyChanged();
+        }
     }
 
     public bool IsErrorVisible
     {
         get => _isErrorVisible;
-        private set { _isErrorVisible = value; OnPropertyChanged(); }
+        private set
+        {
+            _isErrorVisible = value;
+            OnPropertyChanged();
+        }
     }
 
     public bool ShowRetryButton
     {
         get => _showRetryButton;
-        private set { _showRetryButton = value; OnPropertyChanged(); }
+        private set
+        {
+            _showRetryButton = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(RetryButtonVisibility));
+        }
     }
+
+    public Visibility RetryButtonVisibility => ShowRetryButton ? Visibility.Visible : Visibility.Collapsed;
 
     public string DiagnosticSummary
     {
         get => _diagnosticSummary;
-        private set { _diagnosticSummary = value; OnPropertyChanged(); }
+        private set
+        {
+            _diagnosticSummary = value;
+            OnPropertyChanged();
+        }
     }
 
     public bool IsDiagnosticVisible
     {
         get => _isDiagnosticVisible;
-        private set { _isDiagnosticVisible = value; OnPropertyChanged(); }
+        private set
+        {
+            _isDiagnosticVisible = value;
+            OnPropertyChanged();
+        }
     }
 
-    // --- Commands ---
-
-    public ICommand ReloadCommand { get; }
-    public ICommand StopCommand { get; }
     public ICommand ClearSessionCommand { get; }
     public ICommand OpenSettingsCommand { get; }
     public ICommand RetryCommand { get; }
     public ICommand DevToolsCommand { get; }
-    public ICommand QuickStopCommand { get; }
-    public ICommand QuickStatusCommand { get; }
-    public ICommand QuickNewCommand { get; }
-    public ICommand QuickQueueCommand { get; }
     public ICommand RunDiagnosticsCommand { get; }
     public ICommand ViewLogsCommand { get; }
-
-    // --- Public methods ---
 
     /// <summary>
     /// Gets the underlying WebViewService for binding to the WebView2 control.
@@ -182,14 +207,12 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Reloads environments from configuration (e.g., after settings dialog closes).
+    /// Reloads environments from configuration (e.g. after settings dialog closes).
     /// </summary>
     public void RefreshEnvironments()
     {
         LoadEnvironments();
     }
-
-    // --- Private methods ---
 
     private void LoadEnvironments()
     {
@@ -201,47 +224,27 @@ public class MainViewModel : INotifyPropertyChanged
             Environments.Add(env);
         }
 
-        // Restore selection
         _selectedEnvironment = App.Configuration.GetSelectedEnvironment();
         OnPropertyChanged(nameof(SelectedEnvironment));
         OnPropertyChanged(nameof(CurrentUrl));
+        OnPropertyChanged(nameof(SelectedEnvironmentName));
     }
 
     private void OnEnvironmentChanged()
     {
-        if (_selectedEnvironment is null) return;
+        if (_selectedEnvironment is null)
+        {
+            return;
+        }
 
-        // Persist selection
         App.Configuration.Settings.SelectedEnvironmentName = _selectedEnvironment.Name;
         App.Configuration.Save();
 
-        // Navigate
         if (_webViewService.IsInitialized)
         {
             _webViewService.Navigate(_selectedEnvironment.GatewayUrl);
         }
     }
-
-    private void OnReload()
-    {
-        _webViewService.Reload();
-    }
-
-    private async Task OnStopAsync()
-    {
-        App.Logger.Info("Stop command triggered by user.");
-
-        // First, stop any active navigation
-        _webViewService.StopNavigation();
-
-        // Then try to inject the /stop command into the OpenClaw UI
-        var result = await _webViewService.InjectStopCommandAsync();
-        if (!result)
-        {
-            App.Logger.Warning("Stop command injection did not find a target input.");
-        }
-    }
-
 
     private async Task OnClearSessionAsync()
     {
@@ -259,16 +262,6 @@ public class MainViewModel : INotifyPropertyChanged
         _webViewService.OpenDevTools();
     }
 
-    private async Task OnQuickCommandAsync(string command)
-    {
-        App.Logger.Info($"Quick command: {command}");
-        var result = await _webViewService.InjectQuickCommandAsync(command);
-        if (!result)
-        {
-            App.Logger.Warning($"Quick command '{command}' injection did not find a target input.");
-        }
-    }
-
     /// <summary>
     /// Dismisses the error InfoBar.
     /// </summary>
@@ -276,8 +269,6 @@ public class MainViewModel : INotifyPropertyChanged
     {
         IsErrorVisible = false;
     }
-
-    // --- Phase 4: Diagnostics ---
 
     private async Task OnRunDiagnosticsAsync()
     {
@@ -296,7 +287,6 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void OnConnectionStateChanged(ConnectionState state)
     {
-        // Update on the UI thread
         App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
         {
             ConnectionState = state;
@@ -304,26 +294,24 @@ public class MainViewModel : INotifyPropertyChanged
 
             (StatusMessage, StatusIcon) = state switch
             {
-                ConnectionState.Connected => (StringResources.StatusConnected, "\uE701"), // Checkmark
-                ConnectionState.Loading => (StringResources.StatusLoading, "\uE895"), // Sync
-                ConnectionState.Reconnecting => (StringResources.StatusReconnecting, "\uE72C"), // Refresh
-                ConnectionState.AuthFailed => (StringResources.StatusAuthFailed, "\uE72E"), // Shield error
-                ConnectionState.Error => (StringResources.StatusError, "\uEA39"), // Error badge
-                ConnectionState.Offline => (StringResources.StatusOffline, "\uE871"), // Globe
+                ConnectionState.Connected => (StringResources.StatusConnected, "\uE701"),
+                ConnectionState.Loading => (StringResources.StatusLoading, "\uE895"),
+                ConnectionState.Reconnecting => (StringResources.StatusReconnecting, "\uE72C"),
+                ConnectionState.AuthFailed => (StringResources.StatusAuthFailed, "\uE72E"),
+                ConnectionState.Error => (StringResources.StatusError, "\uEA39"),
+                ConnectionState.Offline => (StringResources.StatusOffline, "\uE871"),
                 _ => (StringResources.StatusOffline, "\uE871"),
             };
 
-            // Show/hide error InfoBar for error states
             if (state is ConnectionState.Error or ConnectionState.AuthFailed or ConnectionState.Reconnecting)
             {
-                ShowRetryButton = state is not ConnectionState.Reconnecting; // auto-retry handles reconnecting
+                ShowRetryButton = state is not ConnectionState.Reconnecting;
             }
             else
             {
                 IsErrorVisible = false;
             }
 
-            // Heartbeat lifecycle: start only when connected, stop otherwise
             if (state == ConnectionState.Connected && _selectedEnvironment is not null)
             {
                 var interval = App.Configuration.Settings.HeartbeatIntervalSeconds;
@@ -351,12 +339,12 @@ public class MainViewModel : INotifyPropertyChanged
         App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
         {
             StatusMessage = StringResources.StatusHeartbeatFailed;
-            StatusIcon = "\uE72C"; // Refresh icon
+            StatusIcon = "\uE72C";
             ConnectionState = ConnectionState.Reconnecting;
             ErrorMessage = StringResources.StatusHeartbeatFailed;
             IsErrorVisible = true;
             ShowRetryButton = false;
-            App.Logger.Warning("Heartbeat failure — auto-reconnecting.");
+            App.Logger.Warning("Heartbeat failure - auto-reconnecting.");
         });
     }
 
@@ -375,10 +363,11 @@ public class SimpleCommand : ICommand
 
     public SimpleCommand(Action action) => _action = action;
 
-
-#pragma warning disable CS0067 // Required by ICommand interface
+#pragma warning disable CS0067
     public event EventHandler? CanExecuteChanged;
 #pragma warning restore CS0067
+
     public bool CanExecute(object? parameter) => true;
+
     public void Execute(object? parameter) => _action();
 }

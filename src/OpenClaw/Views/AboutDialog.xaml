@@ -10,46 +10,41 @@
     CloseButtonText="Close"
     DefaultButton="Close">
 
-    <StackPanel Spacing="16" MinWidth="360" Padding="0,8">
-        <!-- App Name and Icon -->
-        <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
-            <Image Source="/Assets/WindowIcon.ico" Width="48" Height="48" />
+    <StackPanel MinWidth="360" Padding="0,8" Spacing="16">
+        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="12">
+            <Image Source="/Assets/apple-touch-icon.png" Width="48" Height="48" />
             <StackPanel VerticalAlignment="Center">
                 <TextBlock Text="OpenClaw"
                            Style="{StaticResource SubtitleTextBlockStyle}"
                            FontWeight="SemiBold" />
                 <TextBlock x:Name="VersionText"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                           FontSize="13" />
+                           FontSize="13"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </StackPanel>
         </StackPanel>
 
-        <!-- Divider -->
         <Border Height="1"
-                Background="{ThemeResource DividerStrokeColorDefaultBrush}"
-                Margin="0,4" />
+                Margin="0,4"
+                Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
 
-        <!-- Description -->
         <TextBlock Text="A native Windows management shell for OpenClaw Gateway, built with WinUI 3 and WebView2."
-                   TextWrapping="Wrap"
-                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                    FontSize="13"
-                   TextAlignment="Center" />
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   TextAlignment="Center"
+                   TextWrapping="Wrap" />
 
-        <!-- Links -->
         <HyperlinkButton Content="GitHub Repository"
-                         NavigateUri="https://github.com/Jutaosay/openclaw_for_windows"
-                         HorizontalAlignment="Center" />
+                         HorizontalAlignment="Center"
+                         NavigateUri="https://github.com/Jutaosay/openclaw_for_windows" />
 
-        <!-- Developer -->
-        <TextBlock HorizontalAlignment="Center" FontSize="12"
+        <TextBlock HorizontalAlignment="Center"
+                   FontSize="12"
                    Foreground="{ThemeResource TextFillColorSecondaryBrush}">
             <Run Text="Developed by " />
             <Hyperlink NavigateUri="https://github.com/Jutaosay">@Jutaosay</Hyperlink>
         </TextBlock>
 
-        <!-- Copyright -->
-        <TextBlock Text="© 2026 Lanstack @openclaw. All rights reserved."
+        <TextBlock Text="(C) 2026 Lanstack @openclaw. All rights reserved."
                    FontSize="12"
                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                    HorizontalAlignment="Center" />

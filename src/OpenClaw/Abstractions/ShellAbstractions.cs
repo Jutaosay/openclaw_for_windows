@@ -27,7 +27,6 @@ public interface IWebViewHost
 
     void Navigate(string url);
     void Reload();
-    void StopNavigation();
     void OpenDevTools();
 
     Task ClearBrowsingDataAsync();
@@ -48,16 +47,6 @@ public enum HostConnectionState
     Reconnecting,
     AuthFailed,
     Error,
-}
-
-/// <summary>
-/// Abstraction for command injection into the hosted remote UI.
-/// This separates the "how to send commands" from "what commands to send".
-/// </summary>
-public interface ICommandInjector
-{
-    Task<bool> InjectCommandAsync(string command);
-    Task<bool> InjectStopCommandAsync();
 }
 
 /// <summary>

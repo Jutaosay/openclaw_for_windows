@@ -13,12 +13,13 @@ namespace OpenClaw.ViewModels;
 /// </summary>
 public class SettingsViewModel : INotifyPropertyChanged
 {
+    private readonly Dictionary<EnvironmentConfig, string> _originalNames = [];
+    private readonly string? _originalSelectedEnvironmentName = App.Configuration.Settings.SelectedEnvironmentName;
     private EnvironmentConfig? _selectedEnvironment;
     private string _editName = string.Empty;
     private string _editUrl = string.Empty;
     private bool _editIsDefault;
     private bool _isEditing;
-    private string _selectedTheme = "System";
     private string _selectedLanguage = "System";
 
     public SettingsViewModel()
@@ -26,11 +27,10 @@ public class SettingsViewModel : INotifyPropertyChanged
         // Load a copy of environments so we can cancel without persisting
         foreach (var env in App.Configuration.Settings.Environments)
         {
-            Environments.Add(env.Clone());
+            var clone = env.Clone();
+            Environments.Add(clone);
+            _originalNames[clone] = env.Name;
         }
-
-        // Load theme preference
-        _selectedTheme = App.Configuration.Settings.AppTheme ?? "System";
 
         // Load language preference
         _selectedLanguage = App.Configuration.Settings.AppLanguage ?? "System";
@@ -75,12 +75,6 @@ public class SettingsViewModel : INotifyPropertyChanged
         set { _isEditing = value; OnPropertyChanged(); }
     }
 
-    public string SelectedTheme
-    {
-        get => _selectedTheme;
-        set { _selectedTheme = value; OnPropertyChanged(); }
-    }
-
     public string SelectedLanguage
     {
         get => _selectedLanguage;
@@ -99,6 +93,7 @@ public class SettingsViewModel : INotifyPropertyChanged
             IsDefault = Environments.Count == 0,
         };
         Environments.Add(env);
+        _originalNames[env] = env.Name;
         SelectedEnvironment = env;
         IsEditing = true;
     }
@@ -109,6 +104,7 @@ public class SettingsViewModel : INotifyPropertyChanged
     public void RemoveEnvironment()
     {
         if (_selectedEnvironment is null) return;
+        _originalNames.Remove(_selectedEnvironment);
         Environments.Remove(_selectedEnvironment);
         SelectedEnvironment = Environments.FirstOrDefault();
     }
@@ -166,8 +162,10 @@ public class SettingsViewModel : INotifyPropertyChanged
             App.Configuration.Settings.Environments[0].IsDefault = true;
         }
 
-        // Save theme and language
-        App.Configuration.Settings.AppTheme = SelectedTheme;
+        var persistedSelection = ResolveSelectedEnvironmentName();
+        App.Configuration.Settings.SelectedEnvironmentName = persistedSelection;
+
+        // Save language
         App.Configuration.Settings.AppLanguage = SelectedLanguage;
 
         App.Configuration.Save();
@@ -191,6 +189,24 @@ public class SettingsViewModel : INotifyPropertyChanged
             EditIsDefault = false;
             IsEditing = false;
         }
+    }
+
+    private string? ResolveSelectedEnvironmentName()
+    {
+        if (!string.IsNullOrEmpty(_originalSelectedEnvironmentName))
+        {
+            var matchedEnvironment = Environments.FirstOrDefault(env =>
+                _originalNames.TryGetValue(env, out var originalName) &&
+                string.Equals(originalName, _originalSelectedEnvironmentName, StringComparison.Ordinal));
+
+            if (matchedEnvironment is not null)
+            {
+                return matchedEnvironment.Name;
+            }
+        }
+
+        return App.Configuration.Settings.Environments.FirstOrDefault(e => e.IsDefault)?.Name
+            ?? App.Configuration.Settings.Environments.FirstOrDefault()?.Name;
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? name = null)

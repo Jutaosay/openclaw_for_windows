@@ -34,12 +34,6 @@
                           SelectionMode="Single"
                           SelectionChanged="OnNavSelectionChanged"
                           Padding="4,12">
-                    <ListViewItem x:Name="NavAppearance" Tag="Appearance">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE790;" FontSize="14" />
-                            <TextBlock Text="Appearance" FontSize="13" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </ListViewItem>
                     <ListViewItem x:Name="NavLanguage" Tag="Language">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE774;" FontSize="14" />
@@ -67,41 +61,8 @@
                           HorizontalScrollBarVisibility="Disabled"
                           Padding="24,20">
                 <Grid>
-                    <!-- ======= Panel: Appearance ======= -->
-                    <StackPanel x:Name="PanelAppearance" Spacing="12" Visibility="Visible">
-                        <TextBlock Text="Appearance"
-                                   Style="{StaticResource SubtitleTextBlockStyle}" />
-                        <TextBlock Text="Choose how OpenClaw looks."
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   FontSize="13" />
-
-                        <RadioButtons x:Name="ThemeRadioButtons"
-                                      Header="App Theme"
-                                      Margin="0,8,0,0"
-                                      SelectionChanged="OnThemeRadioSelectionChanged">
-                            <RadioButton Tag="Light">
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <FontIcon Glyph="&#xE706;" FontSize="14" />
-                                    <TextBlock Text="Light" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </RadioButton>
-                            <RadioButton Tag="Dark">
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <FontIcon Glyph="&#xE708;" FontSize="14" />
-                                    <TextBlock Text="Dark" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </RadioButton>
-                            <RadioButton Tag="System">
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <FontIcon Glyph="&#xE7F4;" FontSize="14" />
-                                    <TextBlock Text="System Default" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </RadioButton>
-                        </RadioButtons>
-                    </StackPanel>
-
                     <!-- ======= Panel: Language ======= -->
-                    <StackPanel x:Name="PanelLanguage" Spacing="12" Visibility="Collapsed">
+                    <StackPanel x:Name="PanelLanguage" Spacing="12" Visibility="Visible">
                         <TextBlock Text="Language"
                                    Style="{StaticResource SubtitleTextBlockStyle}" />
                         <TextBlock Text="Choose your preferred display language."

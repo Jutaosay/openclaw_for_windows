@@ -8,7 +8,9 @@ using Microsoft.UI.Xaml.Media;
 using OpenClaw.Services;
 using OpenClaw.ViewModels;
 using OpenClaw.Views;
+using System.Runtime.InteropServices;
 using Windows.Graphics;
+using WinRT.Interop;
 
 namespace OpenClaw;
 
@@ -17,11 +19,28 @@ namespace OpenClaw;
 /// </summary>
 public sealed partial class MainWindow : Window
 {
+    private const int DwmWindowAttributeUseImmersiveDarkMode = 20;
+    private const int DwmWindowAttributeBorderColor = 34;
+    private const int DwmWindowAttributeCaptionColor = 35;
+    private const int DwmWindowAttributeTextColor = 36;
+    private const uint DwmColorNone = 0xFFFFFFFE;
+    private const uint SetWindowPosNoMove = 0x0002;
+    private const uint SetWindowPosNoSize = 0x0001;
+    private const uint SetWindowPosNoZOrder = 0x0004;
+    private const uint SetWindowPosNoActivate = 0x0010;
+    private const uint SetWindowPosFrameChanged = 0x0020;
+
+    private bool _hasPerformedInitialTitleBarRefresh;
+    private bool _isDarkThemeActive;
+
     public MainViewModel ViewModel { get; } = new();
 
     public MainWindow()
     {
         this.InitializeComponent();
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(TitleBarDragRegion);
+        UpdateTitleBarInsets();
 
         // Set title and system backdrop
         Title = "OpenClaw";
@@ -45,6 +64,7 @@ public sealed partial class MainWindow : Window
 
         // Save window bounds on close
         this.Closed += OnWindowClosed;
+        this.Activated += OnWindowActivated;
 
         // Apply saved theme after content is loaded
         if (this.Content is FrameworkElement rootElement)
@@ -53,10 +73,15 @@ public sealed partial class MainWindow : Window
             {
                 ApplyTheme(App.Configuration.Settings.AppTheme);
             };
+            rootElement.ActualThemeChanged += (s, e) =>
+            {
+                UpdateTitleBarColors(rootElement.ActualTheme);
+            };
         }
 
         // Set initial status dot color
         UpdateStatusDotColor(ConnectionState.Offline);
+        UpdateThemeSelector(App.Configuration.Settings.AppTheme);
     }
 
     private void RestoreWindowBounds()
@@ -113,6 +138,25 @@ public sealed partial class MainWindow : Window
         App.Logger.Info("Application closing.");
     }
 
+    private void OnWindowActivated(object sender, WindowActivatedEventArgs args)
+    {
+        if (_hasPerformedInitialTitleBarRefresh || args.WindowActivationState == WindowActivationState.Deactivated)
+        {
+            return;
+        }
+
+        _hasPerformedInitialTitleBarRefresh = true;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            RefreshTitleBarVisualState();
+            ForceNonClientFrameRefresh();
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                RefreshTitleBarVisualState();
+            });
+        });
+    }
+
     private SettingsDialog? _settingsWindow;
 
     private void OnSettingsClick(object sender, RoutedEventArgs e)
@@ -142,6 +186,7 @@ public sealed partial class MainWindow : Window
         {
             ViewModel.RefreshEnvironments();
             ApplyTheme(App.Configuration.Settings.AppTheme);
+            UpdateThemeSelector(App.Configuration.Settings.AppTheme);
         };
 
         _settingsWindow.Closed += (s, e) => _settingsWindow = null;
@@ -215,6 +260,37 @@ public sealed partial class MainWindow : Window
         await dialog.ShowAsync();
     }
 
+    private void OnThemeSelectionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not string selectedTheme)
+        {
+            return;
+        }
+
+        App.Configuration.Settings.AppTheme = selectedTheme;
+        App.Configuration.Save();
+        ApplyTheme(selectedTheme);
+        UpdateThemeSelector(selectedTheme);
+    }
+
+    private void UpdateThemeSelector(string themeMode)
+    {
+        UpdateThemeButtonState(SystemThemeButton, themeMode == "System");
+        UpdateThemeButtonState(LightThemeButton, themeMode == "Light");
+        UpdateThemeButtonState(DarkThemeButton, themeMode == "Dark");
+    }
+
+    private static void UpdateThemeButtonState(Button button, bool isSelected)
+    {
+        button.Background = isSelected
+            ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 230, 240, 255))
+            : new SolidColorBrush(Windows.UI.Color.FromArgb(0, 0, 0, 0));
+
+        button.Foreground = isSelected
+            ? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 37, 99, 235))
+            : (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"];
+    }
+
     private void ApplyTheme(string themeMode)
     {
         if (this.Content is FrameworkElement rootElement)
@@ -226,27 +302,174 @@ public sealed partial class MainWindow : Window
                 _ => ElementTheme.Default,
             };
 
-            // Update title bar colors to match theme
-            var isDark = rootElement.ActualTheme == ElementTheme.Dark;
-            var titleBar = AppWindow.TitleBar;
+            var effectiveTheme = themeMode switch
+            {
+                "Light" => ElementTheme.Light,
+                "Dark" => ElementTheme.Dark,
+                _ => rootElement.ActualTheme,
+            };
+            var isTransitioningToDark = effectiveTheme == ElementTheme.Dark && !_isDarkThemeActive;
 
-            titleBar.ForegroundColor = isDark ? Colors.White : Colors.Black;
-            titleBar.BackgroundColor = isDark
-                ? Windows.UI.Color.FromArgb(255, 32, 32, 32)
-                : Windows.UI.Color.FromArgb(255, 243, 243, 243);
-            titleBar.InactiveForegroundColor = isDark
-                ? Windows.UI.Color.FromArgb(255, 160, 160, 160)
-                : Windows.UI.Color.FromArgb(255, 128, 128, 128);
-            titleBar.InactiveBackgroundColor = titleBar.BackgroundColor;
+            UpdateTitleBarColors(effectiveTheme);
+            _isDarkThemeActive = effectiveTheme == ElementTheme.Dark;
 
-            titleBar.ButtonForegroundColor = titleBar.ForegroundColor;
-            titleBar.ButtonBackgroundColor = titleBar.BackgroundColor;
-            titleBar.ButtonInactiveForegroundColor = titleBar.InactiveForegroundColor;
-            titleBar.ButtonInactiveBackgroundColor = titleBar.InactiveBackgroundColor;
-            titleBar.ButtonHoverForegroundColor = isDark ? Colors.White : Colors.Black;
-            titleBar.ButtonHoverBackgroundColor = isDark
-                ? Windows.UI.Color.FromArgb(255, 51, 51, 51)
-                : Windows.UI.Color.FromArgb(255, 229, 229, 229);
+            // Theme resource resolution can settle after RequestedTheme changes,
+            // so enqueue one more pass to keep the system title bar in sync.
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                RefreshTitleBarVisualState();
+                ForceNonClientFrameRefresh();
+                if (isTransitioningToDark)
+                {
+                    ForceDarkModeWindowRefresh();
+                }
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    RefreshTitleBarVisualState();
+                });
+            });
         }
     }
+
+    private void RefreshTitleBarVisualState()
+    {
+        UpdateTitleBarInsets();
+
+        if (this.Content is FrameworkElement rootElement)
+        {
+            UpdateTitleBarColors(rootElement.ActualTheme);
+            AppTitleBar.InvalidateMeasure();
+            AppTitleBar.InvalidateArrange();
+            rootElement.InvalidateMeasure();
+            rootElement.InvalidateArrange();
+            rootElement.UpdateLayout();
+        }
+    }
+
+    private void ForceNonClientFrameRefresh()
+    {
+        var hwnd = WindowNative.GetWindowHandle(this);
+        if (hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        SetWindowPos(
+            hwnd,
+            IntPtr.Zero,
+            0,
+            0,
+            0,
+            0,
+            SetWindowPosNoMove | SetWindowPosNoSize | SetWindowPosNoZOrder | SetWindowPosNoActivate | SetWindowPosFrameChanged);
+    }
+
+    private void ForceDarkModeWindowRefresh()
+    {
+        var currentSize = AppWindow.Size;
+        if (currentSize.Width <= 0 || currentSize.Height <= 0)
+        {
+            return;
+        }
+
+        AppWindow.Resize(new SizeInt32(currentSize.Width, currentSize.Height + 1));
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            AppWindow.Resize(currentSize);
+            RefreshTitleBarVisualState();
+        });
+    }
+
+    private void UpdateTitleBarInsets()
+    {
+        var titleBar = AppWindow.TitleBar;
+        LeftInsetColumn.Width = new GridLength(titleBar.LeftInset);
+        RightInsetColumn.Width = new GridLength(titleBar.RightInset);
+    }
+
+    private void UpdateTitleBarColors(ElementTheme actualTheme)
+    {
+        var isDark = actualTheme == ElementTheme.Dark;
+        var titleBar = AppWindow.TitleBar;
+        var titleBarBackground = isDark
+            ? Windows.UI.Color.FromArgb(255, 32, 32, 32)
+            : Windows.UI.Color.FromArgb(255, 243, 243, 243);
+        var inactiveBackground = isDark
+            ? Windows.UI.Color.FromArgb(255, 40, 40, 40)
+            : Windows.UI.Color.FromArgb(255, 248, 248, 248);
+
+        titleBar.ForegroundColor = isDark ? Colors.White : Colors.Black;
+        titleBar.BackgroundColor = Colors.Transparent;
+        titleBar.InactiveForegroundColor = isDark
+            ? Windows.UI.Color.FromArgb(255, 160, 160, 160)
+            : Windows.UI.Color.FromArgb(255, 128, 128, 128);
+        titleBar.InactiveBackgroundColor = Colors.Transparent;
+
+        titleBar.ButtonForegroundColor = titleBar.ForegroundColor;
+        titleBar.ButtonBackgroundColor = Colors.Transparent;
+        titleBar.ButtonInactiveForegroundColor = titleBar.InactiveForegroundColor;
+        titleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+        titleBar.ButtonHoverForegroundColor = isDark ? Colors.White : Colors.Black;
+        titleBar.ButtonHoverBackgroundColor = isDark
+            ? Windows.UI.Color.FromArgb(255, 51, 51, 51)
+            : Windows.UI.Color.FromArgb(255, 229, 229, 229);
+        titleBar.ButtonPressedForegroundColor = titleBar.ButtonForegroundColor;
+        titleBar.ButtonPressedBackgroundColor = isDark
+            ? Windows.UI.Color.FromArgb(255, 64, 64, 64)
+            : Windows.UI.Color.FromArgb(255, 217, 217, 217);
+
+        AppTitleBar.Background = new SolidColorBrush(titleBarBackground);
+        RootLayout.Background = new SolidColorBrush(titleBarBackground);
+        TopEdgeCover.Background = new SolidColorBrush(titleBarBackground);
+        ApplyNativeWindowTheme(titleBarBackground, isDark);
+    }
+
+    private void ApplyNativeWindowTheme(Windows.UI.Color backgroundColor, bool isDark)
+    {
+        var hwnd = WindowNative.GetWindowHandle(this);
+        if (hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var useDarkMode = isDark ? 1 : 0;
+        var borderColor = DwmColorNone;
+        var captionColor = ToColorRef(backgroundColor);
+        var textColor = ToColorRef(isDark ? Colors.White : Colors.Black);
+
+        DwmSetWindowAttribute(hwnd, DwmWindowAttributeUseImmersiveDarkMode, ref useDarkMode, sizeof(int));
+        DwmSetWindowAttribute(hwnd, DwmWindowAttributeBorderColor, ref borderColor, sizeof(uint));
+        DwmSetWindowAttribute(hwnd, DwmWindowAttributeCaptionColor, ref captionColor, sizeof(uint));
+        DwmSetWindowAttribute(hwnd, DwmWindowAttributeTextColor, ref textColor, sizeof(uint));
+    }
+
+    private static uint ToColorRef(Windows.UI.Color color)
+    {
+        return (uint)(color.R | (color.G << 8) | (color.B << 16));
+    }
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(
+        IntPtr hwnd,
+        int dwAttribute,
+        ref int pvAttribute,
+        int cbAttribute);
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(
+        IntPtr hwnd,
+        int dwAttribute,
+        ref uint pvAttribute,
+        int cbAttribute);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int X,
+        int Y,
+        int cx,
+        int cy,
+        uint uFlags);
 }

@@ -6,8 +6,7 @@ using Microsoft.Web.WebView2.Core;
 namespace OpenClaw.Services;
 
 /// <summary>
-/// Manages WebView2 lifecycle, navigation, JavaScript injection,
-/// and connection state monitoring.
+/// Manages WebView2 lifecycle, navigation, and connection state monitoring.
 /// </summary>
 public class WebViewService
 {
@@ -136,120 +135,6 @@ public class WebViewService
         App.Logger.Info("Reloading page.");
         SetState(ConnectionState.Loading);
         _webView.CoreWebView2.Reload();
-    }
-
-    /// <summary>
-    /// Stops the current navigation or page load.
-    /// </summary>
-    public void StopNavigation()
-    {
-        _webView?.CoreWebView2?.Stop();
-    }
-
-    /// <summary>
-    /// Attempts to send a stop command to the remote OpenClaw UI via JavaScript injection.
-    /// This is the MVP stop implementation: it injects "/stop" into the chat input.
-    /// </summary>
-    public async Task<bool> InjectStopCommandAsync()
-    {
-        if (_webView?.CoreWebView2 is null) return false;
-
-        try
-        {
-            // MVP stop: try to find the chat input textarea and inject /stop
-            // This is intentionally isolated so it can be replaced with a cleaner
-            // API integration when OpenClaw Control provides one.
-            const string script = """
-                (function() {
-                    // Attempt 1: Find textarea or contenteditable input
-                    const textarea = document.querySelector('textarea') 
-                        || document.querySelector('[contenteditable="true"]');
-                    if (textarea) {
-                        // Set value and dispatch input event
-                        if (textarea.tagName === 'TEXTAREA' || textarea.tagName === 'INPUT') {
-                            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                                window.HTMLTextAreaElement.prototype, 'value')?.set 
-                                || Object.getOwnPropertyDescriptor(
-                                    window.HTMLInputElement.prototype, 'value')?.set;
-                            if (nativeInputValueSetter) {
-                                nativeInputValueSetter.call(textarea, '/stop');
-                            } else {
-                                textarea.value = '/stop';
-                            }
-                        } else {
-                            textarea.textContent = '/stop';
-                        }
-                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                        
-                        // Try to find and click send button
-                        setTimeout(() => {
-                            const sendBtn = document.querySelector(
-                                'button[type="submit"], button[aria-label*="send"], button[aria-label*="Send"]');
-                            if (sendBtn) sendBtn.click();
-                        }, 100);
-                        return 'stop_injected';
-                    }
-                    return 'input_not_found';
-                })();
-                """;
-
-            var result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
-            App.Logger.Info($"Stop command injection result: {result}");
-            return result.Contains("stop_injected");
-        }
-        catch (Exception ex)
-        {
-            App.Logger.Error($"Stop command injection failed: {ex.Message}");
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Injects an arbitrary quick command into the remote OpenClaw UI.
-    /// Reuses the same textarea-injection pattern as stop.
-    /// </summary>
-    public async Task<bool> InjectQuickCommandAsync(string command)
-    {
-        if (_webView?.CoreWebView2 is null) return false;
-
-        try
-        {
-            var escapedCommand = command.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\"" , "\\\"");
-            var script = $@"
-                (function() {{
-                    const textarea = document.querySelector('textarea')
-                        || document.querySelector('[contenteditable=""true""]');
-                    if (textarea) {{
-                        if (textarea.tagName === 'TEXTAREA' || textarea.tagName === 'INPUT') {{
-                            const setter = Object.getOwnPropertyDescriptor(
-                                window.HTMLTextAreaElement.prototype, 'value')?.set
-                                || Object.getOwnPropertyDescriptor(
-                                    window.HTMLInputElement.prototype, 'value')?.set;
-                            if (setter) setter.call(textarea, '{escapedCommand}');
-                            else textarea.value = '{escapedCommand}';
-                        }} else {{
-                            textarea.textContent = '{escapedCommand}';
-                        }}
-                        textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                        setTimeout(() => {{
-                            const sendBtn = document.querySelector(
-                                'button[type=""submit""], button[aria-label*=""send""], button[aria-label*=""Send""]');
-                            if (sendBtn) sendBtn.click();
-                        }}, 100);
-                        return 'command_injected';
-                    }}
-                    return 'input_not_found';
-                }})();";
-
-            var result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
-            App.Logger.Info($"Quick command '{command}' injection result: {result}");
-            return result.Contains("command_injected");
-        }
-        catch (Exception ex)
-        {
-            App.Logger.Error($"Quick command injection failed: {ex.Message}");
-            return false;
-        }
     }
 
     /// <summary>

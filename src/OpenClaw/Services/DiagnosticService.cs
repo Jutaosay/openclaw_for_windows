@@ -11,6 +11,7 @@ namespace OpenClaw.Services;
 public class DiagnosticService
 {
     private static readonly HttpClient SharedHttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
+
     /// <summary>
     /// Checks whether the WebView2 runtime is installed and available.
     /// </summary>
@@ -72,30 +73,28 @@ public class DiagnosticService
     /// Checks if common session indicators are present in the WebView2.
     /// Returns a hint about whether the session may be expired/invalid.
     /// </summary>
-    public static async Task<DiagnosticResult> CheckSessionAsync(WebViewService webViewService)
+    public static Task<DiagnosticResult> CheckSessionAsync(WebViewService webViewService)
     {
         if (!webViewService.IsInitialized)
         {
-            return DiagnosticResult.Skip("WebView2 not initialized.");
+            return Task.FromResult(DiagnosticResult.Skip("WebView2 not initialized."));
         }
 
-        // This is a best-effort check — looks for common "login" or "auth" indicators
-        // in the current page URL or title.
         var currentUrl = webViewService.GetCurrentUrl();
         if (string.IsNullOrEmpty(currentUrl))
         {
-            return DiagnosticResult.Skip("No page loaded.");
+            return Task.FromResult(DiagnosticResult.Skip("No page loaded."));
         }
 
         var lowerUrl = currentUrl.ToLowerInvariant();
         if (lowerUrl.Contains("login") || lowerUrl.Contains("auth") || lowerUrl.Contains("signin"))
         {
-            return DiagnosticResult.Warn(
+            return Task.FromResult(DiagnosticResult.Warn(
                 "Session may be expired",
-                "The current page appears to be a login/auth page. You may need to re-authenticate.");
+                "The current page appears to be a login/auth page. You may need to re-authenticate."));
         }
 
-        return DiagnosticResult.Pass("Session appears active.");
+        return Task.FromResult(DiagnosticResult.Pass("Session appears active."));
     }
 
     /// <summary>
@@ -128,7 +127,13 @@ public record DiagnosticResult(DiagnosticStatus Status, string Message, string? 
     public static DiagnosticResult Skip(string message) => new(DiagnosticStatus.Skipped, message);
 }
 
-public enum DiagnosticStatus { Pass, Warning, Fail, Skipped }
+public enum DiagnosticStatus
+{
+    Pass,
+    Warning,
+    Fail,
+    Skipped,
+}
 
 /// <summary>
 /// Aggregated diagnostic report.
@@ -147,17 +152,19 @@ public class DiagnosticReport
         {
             var icon = result.Status switch
             {
-                DiagnosticStatus.Pass => "✅",
-                DiagnosticStatus.Warning => "⚠️",
-                DiagnosticStatus.Fail => "❌",
-                _ => "⏭️",
+                DiagnosticStatus.Pass => "[OK]",
+                DiagnosticStatus.Warning => "[WARN]",
+                DiagnosticStatus.Fail => "[FAIL]",
+                _ => "[SKIP]",
             };
+
             lines.AppendLine($"{icon} {name}: {result.Message}");
             if (!string.IsNullOrEmpty(result.Detail))
             {
                 lines.AppendLine($"   {result.Detail}");
             }
         }
+
         return lines.ToString();
     }
 }

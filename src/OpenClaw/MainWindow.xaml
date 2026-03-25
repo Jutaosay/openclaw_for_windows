@@ -9,24 +9,52 @@
     mc:Ignorable="d"
     Title="OpenClaw">
 
-    <Grid>
+    <Grid x:Name="RootLayout"
+          Background="{ThemeResource LayerFillColorDefaultBrush}">
         <Grid.RowDefinitions>
-            <!-- Top Bar -->
+            <RowDefinition Height="37" />
             <RowDefinition Height="Auto" />
-            <!-- Connection Error InfoBar -->
             <RowDefinition Height="Auto" />
-            <!-- Diagnostic InfoBar -->
             <RowDefinition Height="Auto" />
-            <!-- WebView2 Main Area -->
             <RowDefinition Height="*" />
-            <!-- Status Bar -->
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- ============================================================ -->
-        <!-- TOP BAR — Environment selector, URL, and action buttons      -->
-        <!-- ============================================================ -->
-        <Grid Grid.Row="0" Padding="12,8" 
+        <Grid x:Name="AppTitleBar"
+              Grid.Row="0"
+              Height="37"
+              Margin="0,-1,0,0"
+              Background="{ThemeResource LayerFillColorDefaultBrush}"
+              VerticalAlignment="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="LeftInsetColumn" Width="0" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="RightInsetColumn" Width="0" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="8"
+                        VerticalAlignment="Center"
+                        Margin="12,0,0,0">
+                <Image Width="16"
+                       Height="16"
+                       Source="Assets/apple-touch-icon.png" />
+                <TextBlock Text="OpenClaw"
+                           VerticalAlignment="Center"
+                           FontSize="13"
+                           FontWeight="SemiBold" />
+            </StackPanel>
+
+            <Grid x:Name="TitleBarDragRegion"
+                  Grid.Column="2"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch" />
+        </Grid>
+
+        <Grid Grid.Row="1"
+              Padding="12,8"
               Background="{ThemeResource LayerFillColorDefaultBrush}"
               BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
               BorderThickness="0,0,0,1">
@@ -36,8 +64,9 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Environment Selector -->
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal"
+                        Spacing="8">
                 <ComboBox x:Name="EnvironmentSelector"
                           MinWidth="160"
                           ItemsSource="{x:Bind ViewModel.Environments}"
@@ -46,80 +75,54 @@
                           VerticalAlignment="Center"
                           ToolTipService.ToolTip="Select environment" />
 
-                <!-- Current URL display -->
                 <TextBlock x:Name="UrlDisplay"
-                           Text="{x:Bind ViewModel.CurrentUrl, Mode=OneWay}"
+                           Margin="8,0,0,0"
+                           MaxWidth="400"
                            VerticalAlignment="Center"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            IsTextSelectionEnabled="True"
-                           MaxWidth="400"
-                           TextTrimming="CharacterEllipsis"
-                           Margin="8,0,0,0" />
+                           Text="{x:Bind ViewModel.CurrentUrl, Mode=OneWay}"
+                           TextTrimming="CharacterEllipsis" />
             </StackPanel>
 
-            <!-- Action Buttons -->
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
-                <!-- Reload (F5) -->
-                <Button x:Name="ReloadButton"
-                        Command="{x:Bind ViewModel.ReloadCommand}"
-                        ToolTipService.ToolTip="Reload (F5)"
-                        Style="{StaticResource SubtleButtonStyle}">
-                    <FontIcon Glyph="&#xE72C;" FontSize="14" />
-                    <Button.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="F5" />
-                    </Button.KeyboardAccelerators>
-                </Button>
+            <StackPanel x:Name="TitleBarActions"
+                        Grid.Column="2"
+                        Orientation="Horizontal"
+                        Spacing="4">
+                <Border x:Name="ThemeSwitcherContainer"
+                        Padding="2"
+                        Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="16">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="2">
+                        <Button x:Name="SystemThemeButton"
+                                Tag="System"
+                                Click="OnThemeSelectionClick"
+                                ToolTipService.ToolTip="System theme"
+                                Style="{StaticResource ThemeSegmentButtonStyle}">
+                            <FontIcon Glyph="&#xE7F4;" FontSize="13" />
+                        </Button>
 
-                <!-- Stop (Escape) -->
-                <Button x:Name="StopButton"
-                        Command="{x:Bind ViewModel.StopCommand}"
-                        ToolTipService.ToolTip="Stop (Esc)"
-                        Style="{StaticResource SubtleButtonStyle}">
-                    <FontIcon Glyph="&#xE71A;" FontSize="14" />
-                    <Button.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="Escape" />
-                    </Button.KeyboardAccelerators>
-                </Button>
+                        <Button x:Name="LightThemeButton"
+                                Tag="Light"
+                                Click="OnThemeSelectionClick"
+                                ToolTipService.ToolTip="Light theme"
+                                Style="{StaticResource ThemeSegmentButtonStyle}">
+                            <FontIcon Glyph="&#xE706;" FontSize="13" />
+                        </Button>
 
-                <!-- Quick Commands dropdown -->
-                <DropDownButton x:Name="QuickCommandsButton"
-                                ToolTipService.ToolTip="Quick Commands"
-                                Style="{StaticResource SubtleDropDownButtonStyle}">
-                    <FontIcon Glyph="&#xE756;" FontSize="14" />
-                    <DropDownButton.Flyout>
-                        <MenuFlyout Placement="Bottom">
-                            <MenuFlyoutItem Text="/stop — Stop generation"
-                                            Command="{x:Bind ViewModel.QuickStopCommand}">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE71A;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="/status — Check status"
-                                            Command="{x:Bind ViewModel.QuickStatusCommand}">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE946;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="/new — New conversation"
-                                            Command="{x:Bind ViewModel.QuickNewCommand}">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE710;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="/queue — Queue interrupt"
-                                            Command="{x:Bind ViewModel.QuickQueueCommand}">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE8FD;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                        </MenuFlyout>
-                    </DropDownButton.Flyout>
-                </DropDownButton>
+                        <Button x:Name="DarkThemeButton"
+                                Tag="Dark"
+                                Click="OnThemeSelectionClick"
+                                ToolTipService.ToolTip="Dark theme"
+                                Style="{StaticResource ThemeSegmentButtonStyle}">
+                            <FontIcon Glyph="&#xE708;" FontSize="13" />
+                        </Button>
+                    </StackPanel>
+                </Border>
 
-                <!-- Separator -->
-                <AppBarSeparator />
-
-                <!-- Settings -->
                 <Button x:Name="SettingsButton"
                         Click="OnSettingsClick"
                         ToolTipService.ToolTip="Settings"
@@ -127,7 +130,6 @@
                     <FontIcon Glyph="&#xE713;" FontSize="14" />
                 </Button>
 
-                <!-- About -->
                 <Button x:Name="AboutButton"
                         Click="OnAboutClick"
                         ToolTipService.ToolTip="About"
@@ -137,11 +139,8 @@
             </StackPanel>
         </Grid>
 
-        <!-- ============================================================ -->
-        <!-- CONNECTION ERROR INFOBAR                                     -->
-        <!-- ============================================================ -->
         <InfoBar x:Name="ConnectionInfoBar"
-                 Grid.Row="1"
+                 Grid.Row="2"
                  IsOpen="{x:Bind ViewModel.IsErrorVisible, Mode=OneWay}"
                  Severity="Error"
                  Title="Connection Issue"
@@ -151,16 +150,13 @@
             <InfoBar.ActionButton>
                 <Button Content="Retry"
                         Command="{x:Bind ViewModel.RetryCommand}"
-                        Visibility="{x:Bind ViewModel.ShowRetryButton, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.RetryButtonVisibility, Mode=OneWay}"
                         HorizontalAlignment="Right" />
             </InfoBar.ActionButton>
         </InfoBar>
 
-        <!-- ============================================================ -->
-        <!-- DIAGNOSTICS INFOBAR                                          -->
-        <!-- ============================================================ -->
         <InfoBar x:Name="DiagnosticInfoBar"
-                 Grid.Row="2"
+                 Grid.Row="3"
                  IsOpen="{x:Bind ViewModel.IsDiagnosticVisible, Mode=OneWay}"
                  Severity="Informational"
                  Title="Diagnostics"
@@ -168,25 +164,20 @@
                  IsClosable="True"
                  Closed="OnDiagnosticInfoBarClosed" />
 
-        <!-- ============================================================ -->
-        <!-- MAIN AREA — WebView2 hosting remote OpenClaw UI              -->
-        <!-- ============================================================ -->
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="4">
             <WebView2 x:Name="MainWebView" />
 
-            <!-- Loading overlay -->
             <ProgressRing x:Name="LoadingRing"
-                          IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                          Width="48"
+                          Height="48"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center"
-                          Width="48" Height="48"
-                          Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+                          IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                          Visibility="{x:Bind ViewModel.LoadingVisibility, Mode=OneWay}" />
         </Grid>
 
-        <!-- ============================================================ -->
-        <!-- STATUS BAR — Connection state, environment, loading          -->
-        <!-- ============================================================ -->
-        <Grid Grid.Row="4" Padding="12,6"
+        <Grid Grid.Row="5"
+              Padding="12,6"
               Background="{ThemeResource LayerFillColorDefaultBrush}"
               BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
               BorderThickness="0,1,0,0">
@@ -196,22 +187,31 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Connection state indicator -->
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
-                <Ellipse x:Name="StatusDot" Width="8" Height="8"
+            <StackPanel Grid.Column="0"
+                        Orientation="Horizontal"
+                        Spacing="6">
+                <Ellipse x:Name="StatusDot"
+                         Width="8"
+                         Height="8"
                          VerticalAlignment="Center" />
                 <TextBlock x:Name="StatusText"
-                           Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
                            VerticalAlignment="Center"
-                           FontSize="12" />
+                           FontSize="12"
+                           Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}" />
             </StackPanel>
 
-            <!-- Current environment name -->
             <TextBlock Grid.Column="2"
-                       Text="{x:Bind ViewModel.SelectedEnvironment.Name, Mode=OneWay, FallbackValue=''}"
                        VerticalAlignment="Center"
                        FontSize="12"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Text="{x:Bind ViewModel.SelectedEnvironmentName, Mode=OneWay}" />
         </Grid>
+
+        <Border x:Name="TopEdgeCover"
+                Grid.RowSpan="6"
+                Height="1"
+                VerticalAlignment="Top"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                IsHitTestVisible="False" />
     </Grid>
 </Window>

@@ -45,10 +45,9 @@ public sealed partial class SettingsDialog : Window
         {
             EnvironmentList.SelectedIndex = 0;
         }
-        SetThemeRadioSelection(ViewModel.SelectedTheme);
         SetLanguageSelection(ViewModel.SelectedLanguage);
 
-        // Select first nav item (Appearance)
+        // Select first nav item (Language)
         NavList.SelectedIndex = 0;
     }
 
@@ -64,30 +63,9 @@ public sealed partial class SettingsDialog : Window
 
     private void ShowPanel(string tag)
     {
-        PanelAppearance.Visibility = tag == "Appearance" ? Visibility.Visible : Visibility.Collapsed;
         PanelLanguage.Visibility = tag == "Language" ? Visibility.Visible : Visibility.Collapsed;
         PanelEnvironments.Visibility = tag == "Environments" ? Visibility.Visible : Visibility.Collapsed;
         PanelDevTools.Visibility = tag == "DevTools" ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    // --- Theme ---
-
-    private void SetThemeRadioSelection(string theme)
-    {
-        ThemeRadioButtons.SelectedIndex = theme switch
-        {
-            "Light" => 0,
-            "Dark" => 1,
-            _ => 2,
-        };
-    }
-
-    private void OnThemeRadioSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (ThemeRadioButtons.SelectedItem is RadioButton radio && radio.Tag is string themeTag)
-        {
-            ViewModel.SelectedTheme = themeTag;
-        }
     }
 
     // --- Language ---
