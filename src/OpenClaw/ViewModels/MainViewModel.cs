@@ -34,6 +34,8 @@ public class MainViewModel : INotifyPropertyChanged
     {
         ClearSessionCommand = new SimpleCommand(async () => await OnClearSessionAsync());
         OpenSettingsCommand = new SimpleCommand(() => OpenSettingsRequested?.Invoke());
+        ReloadCommand = new SimpleCommand(OnReload);
+        StopCommand = new SimpleCommand(OnStop);
         RetryCommand = new SimpleCommand(OnRetry);
         DevToolsCommand = new SimpleCommand(OnDevTools);
         RunDiagnosticsCommand = new SimpleCommand(async () => await OnRunDiagnosticsAsync());
@@ -183,6 +185,8 @@ public class MainViewModel : INotifyPropertyChanged
 
     public ICommand ClearSessionCommand { get; }
     public ICommand OpenSettingsCommand { get; }
+    public ICommand ReloadCommand { get; }
+    public ICommand StopCommand { get; }
     public ICommand RetryCommand { get; }
     public ICommand DevToolsCommand { get; }
     public ICommand RunDiagnosticsCommand { get; }
@@ -255,6 +259,16 @@ public class MainViewModel : INotifyPropertyChanged
     {
         IsErrorVisible = false;
         _webViewService.RetryNavigation();
+    }
+
+    private void OnReload()
+    {
+        _webViewService.Reload();
+    }
+
+    private void OnStop()
+    {
+        _webViewService.Stop();
     }
 
     private void OnDevTools()

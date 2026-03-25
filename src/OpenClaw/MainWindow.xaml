@@ -89,6 +89,20 @@
                         Grid.Column="2"
                         Orientation="Horizontal"
                         Spacing="4">
+                <Button x:Name="ReloadButton"
+                        Command="{x:Bind ViewModel.ReloadCommand}"
+                        ToolTipService.ToolTip="Refresh"
+                        Style="{StaticResource SubtleButtonStyle}">
+                    <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                </Button>
+
+                <Button x:Name="StopButton"
+                        Command="{x:Bind ViewModel.StopCommand}"
+                        ToolTipService.ToolTip="Stop"
+                        Style="{StaticResource SubtleButtonStyle}">
+                    <FontIcon Glyph="&#xE71A;" FontSize="14" />
+                </Button>
+
                 <Border x:Name="ThemeSwitcherContainer"
                         Padding="2"
                         Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
