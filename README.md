@@ -187,6 +187,11 @@ Design principle: remote-first thin shell. The actual OpenClaw runtime lives on 
 
 ## Recent Changes / 最近更新
 
+### v1.0.5 (2026-03-25)
+
+- Restored the top-bar refresh action and brought back the stop action with in-page `/stop` command injection fallback.
+- Unified the app, About, and shell branding with the OpenClaw logo asset.
+
 ### v1.0.4 (2026-03-25)
 
 - Replaced the application and shell branding icons with the OpenClaw logo for a more consistent visual identity.
@@ -228,6 +233,6 @@ TBD
 
 Developed by [@Jutaosay](https://github.com/Jutaosay) · [GitHub Repository](https://github.com/Jutaosay/openclaw_for_windows)
 
-Current version: 1.0.4
+Current version: 1.0.5
 
 Last updated: 2026-03-25
