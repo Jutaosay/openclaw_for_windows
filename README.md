@@ -133,6 +133,7 @@ dotnet build src\OpenClaw\OpenClaw.csproj -r win-x64
 | Connection Status | Status bar, error InfoBar, retry support |
 | Auto-Reconnect | Retries failed navigation automatically |
 | Heartbeat | Periodic gateway probe with reconnect on repeated failures |
+| Session Isolation | Separate WebView2 profile data per configured environment |
 | Theme | Top-bar segmented switcher for System, Light, and Dark |
 | Language | English, 中文, System |
 | Diagnostics | Runtime, network, and session checks |
@@ -143,7 +144,7 @@ dotnet build src\OpenClaw\OpenClaw.csproj -r win-x64
 
 ## Settings / 设置
 
-The Settings window is organized into three sections:
+The Settings window is organized into four sections:
 
 设置窗口分为三个分区：
 
@@ -151,7 +152,8 @@ The Settings window is organized into three sections:
 |---|---|
 | Environments | Add, edit, remove, and choose default gateway environments |
 | Language | Display language |
-| Developer Tools | Diagnostics, logs, DevTools, clear session |
+| Sessions | Clear WebView2 session data for a specific environment |
+| Developer Tools | Diagnostics, logs, DevTools |
 
 ---
 
@@ -186,6 +188,24 @@ Design principle: remote-first thin shell. The actual OpenClaw runtime lives on 
 ---
 
 ## Recent Changes / 最近更新
+
+### v1.0.8 (2026-03-28)
+
+- Rolled the shell version forward to `1.0.8` for the latest desktop integration pass and verification cycle.
+
+### v1.0.7 (2026-03-28)
+
+- Updated the main window to use Mica Alt as the true backdrop layer instead of painting opaque client-area colors over it.
+- Reworked the title bar surface so app icon/text and caption buttons stay visually aligned with active and inactive window states.
+- Kept the existing non-client frame refresh safeguards in place to reduce the chance of the dark-theme top-edge white line returning.
+
+### v1.0.6 (2026-03-27)
+
+- Refined the hosted Control UI connection model so the shell now distinguishes page load from actual Gateway session readiness.
+- Upgraded diagnostics to surface authentication, pairing, redirect, base-path, and origin-related failures more accurately.
+- Changed the Stop action to prefer the hosted UI's own abort flow before falling back to `/stop` injection.
+- Split WebView2 session storage by environment name and added per-environment session clearing in Settings.
+- Tightened environment URL validation so the shell accepts only hosted Control UI `http(s)` addresses.
 
 ### v1.0.5 (2026-03-25)
 
@@ -233,6 +253,6 @@ TBD
 
 Developed by [@Jutaosay](https://github.com/Jutaosay) · [GitHub Repository](https://github.com/Jutaosay/openclaw_for_windows)
 
-Current version: 1.0.5
+Current version: 1.0.8
 
-Last updated: 2026-03-25
+Last updated: 2026-03-28
