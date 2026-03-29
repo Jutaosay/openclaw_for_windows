@@ -189,6 +189,32 @@ Design principle: remote-first thin shell. The actual OpenClaw runtime lives on 
 
 ## Recent Changes / 最近更新
 
+### v2.0.3 (2026-03-29)
+
+- Replaced the Live run indicator dot matrix animation from green/yellow alternation to a single green wave sweep with opacity gradient (light → dark).
+- Improved 1-day token data refresh timing by triggering background cache refresh on each status probe and reducing the refresh interval from 30s to 15s.
+
+### v2.0.2 (2026-03-29)
+
+- Fixed the retry button state so it cleanly collapses again after the connection recovers.
+- Refactored the top status telemetry flow to centralize heartbeat, auth, and run-state formatting.
+- Reduced patch layering by consolidating the current shell state logic and aligning the documentation with the shipped behavior.
+
+### v2.0.1 (2026-03-28)
+
+- Tuned the top status bar layout again so the 1-day tokens, auth badge, and run state each sit in their own centered lane.
+- Changed the 1-day token value styling to green text and aligned the latest shell polish with version `2.0.1`.
+
+### v2.0.0 (2026-03-28)
+
+- Added the new native top status bar that summarizes heartbeat health, top 1-hour model usage, and current work state.
+- Refined reverse-proxy-aware heartbeat recovery and tightened the telemetry bridge so status reporting follows the documented OpenClaw surfaces more closely.
+
+### v1.0.9 (2026-03-28)
+
+- Refined heartbeat recovery for reverse proxy and Cloudflare Tunnel scenarios by prioritizing hosted Control UI session health before transport-only probes.
+- Added throttled auto-refresh behavior so repeated Gateway reconnect loops do not cause refresh thrash through remote tunnels and proxies.
+
 ### v1.0.8 (2026-03-28)
 
 - Rolled the shell version forward to `1.0.8` for the latest desktop integration pass and verification cycle.
@@ -253,6 +279,6 @@ TBD
 
 Developed by [@Jutaosay](https://github.com/Jutaosay) · [GitHub Repository](https://github.com/Jutaosay/openclaw_for_windows)
 
-Current version: 1.0.8
+Current version: 2.0.3
 
-Last updated: 2026-03-28
+Last updated: 2026-03-29
