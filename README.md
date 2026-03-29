@@ -189,6 +189,11 @@ Design principle: remote-first thin shell. The actual OpenClaw runtime lives on 
 
 ## Recent Changes / 最近更新
 
+### v2.0.4 (2026-03-29)
+
+- Routine bug fixes and stability improvements. / 常规问题修复与稳定性提升。
+
+
 ### v2.0.3 (2026-03-29)
 
 - Replaced the Live run indicator dot matrix animation from green/yellow alternation to a single green wave sweep with opacity gradient (light → dark).
@@ -279,6 +284,6 @@ TBD
 
 Developed by [@Jutaosay](https://github.com/Jutaosay) · [GitHub Repository](https://github.com/Jutaosay/openclaw_for_windows)
 
-Current version: 2.0.3
+Current version: 2.0.4
 
 Last updated: 2026-03-29
