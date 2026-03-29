@@ -64,6 +64,9 @@
   <data name="StatusLoading" xml:space="preserve">
     <value>Loading...</value>
   </data>
+  <data name="StatusGatewayConnecting" xml:space="preserve">
+    <value>Connecting to Gateway...</value>
+  </data>
   <data name="StatusReconnecting" xml:space="preserve">
     <value>Reconnecting...</value>
   </data>
@@ -141,7 +144,7 @@
 
   <!-- Heartbeat -->
   <data name="StatusHeartbeatFailed" xml:space="preserve">
-    <value>Heartbeat lost — reconnecting…</value>
+    <value>Gateway heartbeat lost - refreshing...</value>
   </data>
 
 </root>

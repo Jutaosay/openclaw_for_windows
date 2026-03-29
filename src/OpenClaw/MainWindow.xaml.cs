@@ -1,6 +1,8 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.UI;
+using Microsoft.UI.Composition.SystemBackdrops;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -32,6 +34,11 @@ public sealed partial class MainWindow : Window
 
     private bool _hasPerformedInitialTitleBarRefresh;
     private bool _isDarkThemeActive;
+    private bool _hasInitializedWebViewHost;
+    private bool _isRecreatingWebView;
+    private bool _isWindowActive = true;
+    private bool _pendingWebViewRecreation;
+    private readonly DispatcherQueueTimer _runIndicatorTimer;
 
     public MainViewModel ViewModel { get; } = new();
 
@@ -45,22 +52,24 @@ public sealed partial class MainWindow : Window
         // Set title and system backdrop
         Title = "OpenClaw";
         AppWindow.SetIcon("Assets\\WindowIcon.ico");
-        SystemBackdrop = new MicaBackdrop();
+        SystemBackdrop = new MicaBackdrop
+        {
+            Kind = MicaKind.BaseAlt,
+        };
 
         // Restore window size/position
         RestoreWindowBounds();
 
         // Wire up events
         ViewModel.OpenSettingsRequested += OnOpenSettingsRequested;
+        ViewModel.WebViewRecreationRequested += OnWebViewRecreationRequested;
         ViewModel.ViewLogsRequested += OnViewLogsRequested;
         ViewModel.ErrorOccurred += OnError;
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
 
-        // Initialize WebView2 when the window is loaded
-        MainWebView.Loaded += async (s, e) =>
-        {
-            await ViewModel.InitializeWebViewAsync(MainWebView);
-        };
+        _runIndicatorTimer = DispatcherQueue.CreateTimer();
+        _runIndicatorTimer.Interval = TimeSpan.FromMilliseconds(430);
+        _runIndicatorTimer.Tick += OnRunIndicatorTick;
 
         // Save window bounds on close
         this.Closed += OnWindowClosed;
@@ -72,6 +81,11 @@ public sealed partial class MainWindow : Window
             rootElement.Loaded += (s, e) =>
             {
                 ApplyTheme(App.Configuration.Settings.AppTheme);
+                if (!_hasInitializedWebViewHost)
+                {
+                    _hasInitializedWebViewHost = true;
+                    _ = RecreateWebViewAsync();
+                }
             };
             rootElement.ActualThemeChanged += (s, e) =>
             {
@@ -134,13 +148,21 @@ public sealed partial class MainWindow : Window
 
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {
+        _runIndicatorTimer.Stop();
         SaveWindowBounds();
         App.Logger.Info("Application closing.");
     }
 
     private void OnWindowActivated(object sender, WindowActivatedEventArgs args)
     {
-        if (_hasPerformedInitialTitleBarRefresh || args.WindowActivationState == WindowActivationState.Deactivated)
+        _isWindowActive = args.WindowActivationState != WindowActivationState.Deactivated;
+
+        if (this.Content is FrameworkElement rootElement)
+        {
+            UpdateTitleBarColors(rootElement.ActualTheme);
+        }
+
+        if (_hasPerformedInitialTitleBarRefresh || !_isWindowActive)
         {
             return;
         }
@@ -182,11 +204,12 @@ public sealed partial class MainWindow : Window
             MainViewModel = this.ViewModel,
         };
 
-        _settingsWindow.SettingsSaved += () =>
+        _settingsWindow.SettingsSaved += async () =>
         {
             ViewModel.RefreshEnvironments();
             ApplyTheme(App.Configuration.Settings.AppTheme);
             UpdateThemeSelector(App.Configuration.Settings.AppTheme);
+            await RecreateWebViewAsync();
         };
 
         _settingsWindow.Closed += (s, e) => _settingsWindow = null;
@@ -197,6 +220,11 @@ public sealed partial class MainWindow : Window
     {
         // Error is now displayed via the InfoBar binding
         App.Logger.Error($"UI error displayed: {message}");
+    }
+
+    private void OnWebViewRecreationRequested()
+    {
+        _ = RecreateWebViewAsync();
     }
 
     private void OnInfoBarClosed(InfoBar sender, InfoBarClosedEventArgs args)
@@ -229,7 +257,36 @@ public sealed partial class MainWindow : Window
         if (e.PropertyName == nameof(MainViewModel.ConnectionState))
         {
             UpdateStatusDotColor(ViewModel.ConnectionState);
+            return;
         }
+
+        if (e.PropertyName == nameof(MainViewModel.IsRunIndicatorsAnimating))
+        {
+            UpdateRunIndicatorAnimationState();
+        }
+    }
+
+    private void UpdateRunIndicatorAnimationState()
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (ViewModel.IsRunIndicatorsAnimating)
+            {
+                if (!_runIndicatorTimer.IsRunning)
+                {
+                    _runIndicatorTimer.Start();
+                }
+            }
+            else
+            {
+                _runIndicatorTimer.Stop();
+            }
+        });
+    }
+
+    private void OnRunIndicatorTick(DispatcherQueueTimer sender, object args)
+    {
+        ViewModel.AdvanceRunIndicators();
     }
 
     private void UpdateStatusDotColor(ConnectionState state)
@@ -239,7 +296,7 @@ public sealed partial class MainWindow : Window
             var brushKey = state switch
             {
                 ConnectionState.Connected => "StatusConnectedBrush",
-                ConnectionState.Loading or ConnectionState.Reconnecting => "StatusReconnectingBrush",
+                ConnectionState.Loading or ConnectionState.GatewayConnecting or ConnectionState.Reconnecting => "StatusReconnectingBrush",
                 ConnectionState.AuthFailed or ConnectionState.Error => "StatusErrorBrush",
                 _ => "StatusOfflineBrush",
             };
@@ -258,6 +315,43 @@ public sealed partial class MainWindow : Window
             XamlRoot = this.Content.XamlRoot,
         };
         await dialog.ShowAsync();
+    }
+
+    private async Task RecreateWebViewAsync()
+    {
+        if (_isRecreatingWebView)
+        {
+            _pendingWebViewRecreation = true;
+            return;
+        }
+
+        _isRecreatingWebView = true;
+
+        try
+        {
+            do
+            {
+                _pendingWebViewRecreation = false;
+
+                var nextWebView = new WebView2();
+                nextWebView.HorizontalAlignment = HorizontalAlignment.Stretch;
+                nextWebView.VerticalAlignment = VerticalAlignment.Stretch;
+
+                WebViewHost.Children.Clear();
+                WebViewHost.Children.Add(nextWebView);
+
+                await ViewModel.InitializeWebViewAsync(nextWebView);
+            }
+            while (_pendingWebViewRecreation);
+        }
+        catch (Exception ex)
+        {
+            App.Logger.Error($"Failed to recreate WebView2 host: {ex.Message}");
+        }
+        finally
+        {
+            _isRecreatingWebView = false;
+        }
     }
 
     private void OnThemeSelectionClick(object sender, RoutedEventArgs e)
@@ -397,34 +491,43 @@ public sealed partial class MainWindow : Window
         var inactiveBackground = isDark
             ? Windows.UI.Color.FromArgb(255, 40, 40, 40)
             : Windows.UI.Color.FromArgb(255, 248, 248, 248);
-
-        titleBar.ForegroundColor = isDark ? Colors.White : Colors.Black;
-        titleBar.BackgroundColor = Colors.Transparent;
-        titleBar.InactiveForegroundColor = isDark
+        var activeForeground = isDark ? Colors.White : Colors.Black;
+        var inactiveForeground = isDark
             ? Windows.UI.Color.FromArgb(255, 160, 160, 160)
             : Windows.UI.Color.FromArgb(255, 128, 128, 128);
+        var currentCaptionColor = _isWindowActive ? titleBarBackground : inactiveBackground;
+        var currentForeground = _isWindowActive ? activeForeground : inactiveForeground;
+
+        titleBar.ForegroundColor = activeForeground;
+        titleBar.BackgroundColor = Colors.Transparent;
+        titleBar.InactiveForegroundColor = inactiveForeground;
         titleBar.InactiveBackgroundColor = Colors.Transparent;
 
-        titleBar.ButtonForegroundColor = titleBar.ForegroundColor;
+        titleBar.ButtonForegroundColor = currentForeground;
         titleBar.ButtonBackgroundColor = Colors.Transparent;
-        titleBar.ButtonInactiveForegroundColor = titleBar.InactiveForegroundColor;
+        titleBar.ButtonInactiveForegroundColor = inactiveForeground;
         titleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
-        titleBar.ButtonHoverForegroundColor = isDark ? Colors.White : Colors.Black;
+        titleBar.ButtonHoverForegroundColor = activeForeground;
         titleBar.ButtonHoverBackgroundColor = isDark
-            ? Windows.UI.Color.FromArgb(255, 51, 51, 51)
-            : Windows.UI.Color.FromArgb(255, 229, 229, 229);
-        titleBar.ButtonPressedForegroundColor = titleBar.ButtonForegroundColor;
+            ? Windows.UI.Color.FromArgb(96, 255, 255, 255)
+            : Windows.UI.Color.FromArgb(20, 0, 0, 0);
+        titleBar.ButtonPressedForegroundColor = activeForeground;
         titleBar.ButtonPressedBackgroundColor = isDark
-            ? Windows.UI.Color.FromArgb(255, 64, 64, 64)
-            : Windows.UI.Color.FromArgb(255, 217, 217, 217);
+            ? Windows.UI.Color.FromArgb(144, 255, 255, 255)
+            : Windows.UI.Color.FromArgb(36, 0, 0, 0);
 
-        AppTitleBar.Background = new SolidColorBrush(titleBarBackground);
-        RootLayout.Background = new SolidColorBrush(titleBarBackground);
-        TopEdgeCover.Background = new SolidColorBrush(titleBarBackground);
-        ApplyNativeWindowTheme(titleBarBackground, isDark);
+        UpdateTitleBarContentState(currentForeground, _isWindowActive);
+        TopEdgeCover.Background = new SolidColorBrush(currentCaptionColor);
+        ApplyNativeWindowTheme(currentCaptionColor, currentForeground, isDark);
     }
 
-    private void ApplyNativeWindowTheme(Windows.UI.Color backgroundColor, bool isDark)
+    private void UpdateTitleBarContentState(Windows.UI.Color foregroundColor, bool isWindowActive)
+    {
+        AppTitleText.Foreground = new SolidColorBrush(foregroundColor);
+        AppIcon.Opacity = isWindowActive ? 1.0 : 0.72;
+    }
+
+    private void ApplyNativeWindowTheme(Windows.UI.Color backgroundColor, Windows.UI.Color textColor, bool isDark)
     {
         var hwnd = WindowNative.GetWindowHandle(this);
         if (hwnd == IntPtr.Zero)
@@ -435,12 +538,12 @@ public sealed partial class MainWindow : Window
         var useDarkMode = isDark ? 1 : 0;
         var borderColor = DwmColorNone;
         var captionColor = ToColorRef(backgroundColor);
-        var textColor = ToColorRef(isDark ? Colors.White : Colors.Black);
+        var nativeTextColor = ToColorRef(textColor);
 
         DwmSetWindowAttribute(hwnd, DwmWindowAttributeUseImmersiveDarkMode, ref useDarkMode, sizeof(int));
         DwmSetWindowAttribute(hwnd, DwmWindowAttributeBorderColor, ref borderColor, sizeof(uint));
         DwmSetWindowAttribute(hwnd, DwmWindowAttributeCaptionColor, ref captionColor, sizeof(uint));
-        DwmSetWindowAttribute(hwnd, DwmWindowAttributeTextColor, ref textColor, sizeof(uint));
+        DwmSetWindowAttribute(hwnd, DwmWindowAttributeTextColor, ref nativeTextColor, sizeof(uint));
     }
 
     private static uint ToColorRef(Windows.UI.Color color)

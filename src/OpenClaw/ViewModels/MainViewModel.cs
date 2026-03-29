@@ -6,9 +6,11 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using OpenClaw.Helpers;
 using OpenClaw.Models;
 using OpenClaw.Services;
+using Windows.UI;
 
 namespace OpenClaw.ViewModels;
 
@@ -18,10 +20,15 @@ namespace OpenClaw.ViewModels;
 /// </summary>
 public class MainViewModel : INotifyPropertyChanged
 {
+    private const int HeartbeatIndicatorCount = 12;
+    private const int RunIndicatorCount = 12;
+    private static readonly Brush NeutralBrush = CreateBrush(107, 114, 128);
+    private static readonly Brush SuccessBrush = CreateBrush(34, 197, 94);
+    private static readonly Brush WarningBrush = CreateBrush(245, 158, 11);
+    private static readonly Brush ErrorBrush = CreateBrush(239, 68, 68);
     private readonly WebViewService _webViewService = new();
     private EnvironmentConfig? _selectedEnvironment;
     private string _statusMessage = StringResources.StatusOffline;
-    private string _statusIcon = "\uE871"; // Globe icon
     private ConnectionState _connectionState = ConnectionState.Offline;
     private bool _isLoading;
     private string _errorMessage = string.Empty;
@@ -29,10 +36,38 @@ public class MainViewModel : INotifyPropertyChanged
     private bool _showRetryButton;
     private string _diagnosticSummary = string.Empty;
     private bool _isDiagnosticVisible;
+    private string _heartbeatSummary = "HB --";
+    private Brush _heartbeatSummaryBrush = NeutralBrush;
+    private string _modelSummaryText = "--";
+    private string _accessSummaryText = "AUTH --";
+    private Brush _accessSummaryBrush = NeutralBrush;
+
+    private string _workStatusText = "WAIT";
+    private Brush _workStatusBrush = NeutralBrush;
+    private RunIndicatorMode _runIndicatorMode = RunIndicatorMode.Wait;
+    private bool _isRunIndicatorsAnimating;
+    private int _runAnimationFrame;
 
     public MainViewModel()
     {
-        ClearSessionCommand = new SimpleCommand(async () => await OnClearSessionAsync());
+        for (var index = 0; index < HeartbeatIndicatorCount; index++)
+        {
+            HeartbeatIndicators.Add(new HeartbeatIndicatorViewModel
+            {
+                FillBrush = CreateIndicatorBrush(HeartbeatProbeStatus.Connecting),
+                FillOpacity = CreateIndicatorOpacity(index),
+            });
+        }
+
+        for (var index = 0; index < RunIndicatorCount; index++)
+        {
+            RunIndicators.Add(new HeartbeatIndicatorViewModel
+            {
+                FillBrush = CreateRunIndicatorBrush(RunIndicatorMode.Wait),
+                FillOpacity = CreateRunIndicatorOpacity(RunIndicatorMode.Wait, index, 0),
+            });
+        }
+
         OpenSettingsCommand = new SimpleCommand(() => OpenSettingsRequested?.Invoke());
         ReloadCommand = new SimpleCommand(OnReload);
         StopCommand = new SimpleCommand(OnStop);
@@ -44,6 +79,8 @@ public class MainViewModel : INotifyPropertyChanged
         _webViewService.ConnectionStateChanged += OnConnectionStateChanged;
         _webViewService.NavigationErrorOccurred += OnNavigationError;
         _webViewService.HeartbeatFailed += OnHeartbeatFailed;
+        _webViewService.HeartbeatObserved += OnHeartbeatObserved;
+        _webViewService.ControlUiSnapshotUpdated += OnControlUiSnapshotUpdated;
 
         LoadEnvironments();
     }
@@ -56,6 +93,11 @@ public class MainViewModel : INotifyPropertyChanged
     public event Action? OpenSettingsRequested;
 
     /// <summary>
+    /// Raised when the active environment requires the embedded WebView2 to be recreated.
+    /// </summary>
+    public event Action? WebViewRecreationRequested;
+
+    /// <summary>
     /// Raised when the user requests to view logs.
     /// </summary>
     public event Action? ViewLogsRequested;
@@ -66,6 +108,8 @@ public class MainViewModel : INotifyPropertyChanged
     public event Action<string>? ErrorOccurred;
 
     public ObservableCollection<EnvironmentConfig> Environments { get; } = [];
+    public ObservableCollection<HeartbeatIndicatorViewModel> HeartbeatIndicators { get; } = [];
+    public ObservableCollection<HeartbeatIndicatorViewModel> RunIndicators { get; } = [];
 
     public EnvironmentConfig? SelectedEnvironment
     {
@@ -93,16 +137,6 @@ public class MainViewModel : INotifyPropertyChanged
         private set
         {
             _statusMessage = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public string StatusIcon
-    {
-        get => _statusIcon;
-        private set
-        {
-            _statusIcon = value;
             OnPropertyChanged();
         }
     }
@@ -183,7 +217,87 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public ICommand ClearSessionCommand { get; }
+    public string HeartbeatSummary
+    {
+        get => _heartbeatSummary;
+        private set
+        {
+            _heartbeatSummary = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public Brush HeartbeatSummaryBrush
+    {
+        get => _heartbeatSummaryBrush;
+        private set
+        {
+            _heartbeatSummaryBrush = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string ModelSummaryText
+    {
+        get => _modelSummaryText;
+        private set
+        {
+            _modelSummaryText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string AccessSummaryText
+    {
+        get => _accessSummaryText;
+        private set
+        {
+            _accessSummaryText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public Brush AccessSummaryBrush
+    {
+        get => _accessSummaryBrush;
+        private set
+        {
+            _accessSummaryBrush = value;
+            OnPropertyChanged();
+        }
+    }
+
+
+    public string WorkStatusText
+    {
+        get => _workStatusText;
+        private set
+        {
+            _workStatusText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public Brush WorkStatusBrush
+    {
+        get => _workStatusBrush;
+        private set
+        {
+            _workStatusBrush = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IsRunIndicatorsAnimating
+    {
+        get => _isRunIndicatorsAnimating;
+        private set
+        {
+            _isRunIndicatorsAnimating = value;
+            OnPropertyChanged();
+        }
+    }
+
     public ICommand OpenSettingsCommand { get; }
     public ICommand ReloadCommand { get; }
     public ICommand StopCommand { get; }
@@ -202,7 +316,12 @@ public class MainViewModel : INotifyPropertyChanged
     /// </summary>
     public async Task InitializeWebViewAsync(WebView2 webView)
     {
-        await _webViewService.InitializeAsync(webView);
+        if (_selectedEnvironment is null)
+        {
+            return;
+        }
+
+        await _webViewService.InitializeAsync(webView, _selectedEnvironment.Name);
 
         if (_webViewService.IsInitialized && _selectedEnvironment is not null)
         {
@@ -232,6 +351,7 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedEnvironment));
         OnPropertyChanged(nameof(CurrentUrl));
         OnPropertyChanged(nameof(SelectedEnvironmentName));
+        ResetTelemetry();
     }
 
     private void OnEnvironmentChanged()
@@ -241,18 +361,38 @@ public class MainViewModel : INotifyPropertyChanged
             return;
         }
 
+        ResetTelemetry();
         App.Configuration.Settings.SelectedEnvironmentName = _selectedEnvironment.Name;
         App.Configuration.Save();
 
         if (_webViewService.IsInitialized)
         {
-            _webViewService.Navigate(_selectedEnvironment.GatewayUrl);
+            if (_webViewService.IsUsingEnvironmentProfile(_selectedEnvironment.Name))
+            {
+                _webViewService.Navigate(_selectedEnvironment.GatewayUrl);
+            }
+            else
+            {
+                WebViewRecreationRequested?.Invoke();
+            }
         }
     }
 
-    private async Task OnClearSessionAsync()
+    public async Task ClearSessionForEnvironmentAsync(string environmentName)
     {
-        await _webViewService.ClearBrowsingDataAsync();
+        if (string.IsNullOrWhiteSpace(environmentName))
+        {
+            return;
+        }
+
+        await _webViewService.ClearEnvironmentSessionAsync(environmentName);
+
+        if (string.Equals(_selectedEnvironment?.Name, environmentName, StringComparison.Ordinal))
+        {
+            DismissError();
+            DismissDiagnostics();
+            WebViewRecreationRequested?.Invoke();
+        }
     }
 
     private void OnRetry()
@@ -304,22 +444,17 @@ public class MainViewModel : INotifyPropertyChanged
         App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
         {
             ConnectionState = state;
-            IsLoading = state == ConnectionState.Loading;
-
-            (StatusMessage, StatusIcon) = state switch
-            {
-                ConnectionState.Connected => (StringResources.StatusConnected, "\uE701"),
-                ConnectionState.Loading => (StringResources.StatusLoading, "\uE895"),
-                ConnectionState.Reconnecting => (StringResources.StatusReconnecting, "\uE72C"),
-                ConnectionState.AuthFailed => (StringResources.StatusAuthFailed, "\uE72E"),
-                ConnectionState.Error => (StringResources.StatusError, "\uEA39"),
-                ConnectionState.Offline => (StringResources.StatusOffline, "\uE871"),
-                _ => (StringResources.StatusOffline, "\uE871"),
-            };
+            IsLoading = state is ConnectionState.Loading or ConnectionState.GatewayConnecting;
+            StatusMessage = FormatStatusMessage(state);
+            ShowRetryButton = state is ConnectionState.Error or ConnectionState.AuthFailed;
 
             if (state is ConnectionState.Error or ConnectionState.AuthFailed or ConnectionState.Reconnecting)
             {
-                ShowRetryButton = state is not ConnectionState.Reconnecting;
+                var snapshot = _webViewService.LatestControlUiSnapshot;
+                if (snapshot.IsIssue)
+                {
+                    ErrorMessage = snapshot.DetailOrSummary;
+                }
             }
             else
             {
@@ -328,6 +463,10 @@ public class MainViewModel : INotifyPropertyChanged
 
             if (state == ConnectionState.Connected && _selectedEnvironment is not null)
             {
+                HeartbeatSummary = "HB OK";
+                HeartbeatSummaryBrush = SuccessBrush;
+                ShiftHeartbeatIndicators(HeartbeatProbeStatus.Healthy);
+
                 var interval = App.Configuration.Settings.HeartbeatIntervalSeconds;
                 _webViewService.StartHeartbeat(_selectedEnvironment.GatewayUrl, interval);
             }
@@ -348,24 +487,243 @@ public class MainViewModel : INotifyPropertyChanged
         });
     }
 
-    private void OnHeartbeatFailed()
+    private void OnHeartbeatObserved(HeartbeatProbeResult result)
+    {
+        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            ShiftHeartbeatIndicators(result.Status);
+            (HeartbeatSummary, HeartbeatSummaryBrush) = FormatHeartbeatSummary(result.Status);
+        });
+    }
+
+    private void OnControlUiSnapshotUpdated(ControlUiProbeSnapshot snapshot)
+    {
+        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            ModelSummaryText = FormatModelSummary(snapshot.CurrentModel);
+            (AccessSummaryText, AccessSummaryBrush) = FormatAccessSummary(snapshot);
+
+            var (workStatusText, workStatusBrush, runIndicatorMode) = FormatWorkStatus(snapshot);
+            WorkStatusText = workStatusText;
+            WorkStatusBrush = workStatusBrush;
+            SetRunIndicatorMode(runIndicatorMode);
+        });
+    }
+
+    private void OnHeartbeatFailed(string message)
     {
         App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
         {
             StatusMessage = StringResources.StatusHeartbeatFailed;
-            StatusIcon = "\uE72C";
             ConnectionState = ConnectionState.Reconnecting;
-            ErrorMessage = StringResources.StatusHeartbeatFailed;
+            ErrorMessage = string.IsNullOrWhiteSpace(message)
+                ? StringResources.StatusHeartbeatFailed
+                : message;
             IsErrorVisible = true;
             ShowRetryButton = false;
-            App.Logger.Warning("Heartbeat failure - auto-reconnecting.");
+            HeartbeatSummary = "HB RETRY";
+            HeartbeatSummaryBrush = ErrorBrush;
+            App.Logger.Warning($"Heartbeat failure - refreshing hosted UI. Reason: {ErrorMessage}");
         });
+    }
+
+    private void ShiftHeartbeatIndicators(HeartbeatProbeStatus status)
+    {
+        if (HeartbeatIndicators.Count == 0)
+        {
+            return;
+        }
+
+        for (var index = 0; index < HeartbeatIndicators.Count - 1; index++)
+        {
+            HeartbeatIndicators[index].FillBrush = HeartbeatIndicators[index + 1].FillBrush;
+            HeartbeatIndicators[index].FillOpacity = HeartbeatIndicators[index + 1].FillOpacity;
+        }
+
+        HeartbeatIndicators[^1].FillBrush = CreateIndicatorBrush(status);
+        HeartbeatIndicators[^1].FillOpacity = 0.98;
+    }
+
+    private static Brush CreateIndicatorBrush(HeartbeatProbeStatus status)
+    {
+        return status switch
+        {
+            HeartbeatProbeStatus.Healthy => SuccessBrush,
+            HeartbeatProbeStatus.Connecting => WarningBrush,
+            HeartbeatProbeStatus.SessionBlocked or HeartbeatProbeStatus.Failure => ErrorBrush,
+            _ => NeutralBrush,
+        };
+    }
+
+    private static SolidColorBrush CreateBrush(byte red, byte green, byte blue) =>
+        new(Color.FromArgb(255, red, green, blue));
+
+    private static string FormatStatusMessage(ConnectionState state)
+    {
+        return state switch
+        {
+            ConnectionState.Connected => StringResources.StatusConnected,
+            ConnectionState.Loading => StringResources.StatusLoading,
+            ConnectionState.GatewayConnecting => StringResources.StatusGatewayConnecting,
+            ConnectionState.Reconnecting => StringResources.StatusReconnecting,
+            ConnectionState.AuthFailed => StringResources.StatusAuthFailed,
+            ConnectionState.Error => StringResources.StatusError,
+            _ => StringResources.StatusOffline,
+        };
+    }
+
+    private static (string Text, Brush Brush) FormatHeartbeatSummary(HeartbeatProbeStatus status)
+    {
+        return status switch
+        {
+            HeartbeatProbeStatus.Healthy => ("HB OK", SuccessBrush),
+            HeartbeatProbeStatus.Connecting => ("HB WAIT", WarningBrush),
+            HeartbeatProbeStatus.SessionBlocked => ("HB BLOCK", ErrorBrush),
+            HeartbeatProbeStatus.Failure => ("HB FAIL", ErrorBrush),
+            _ => ("HB --", NeutralBrush),
+        };
+    }
+
+    private static string FormatModelSummary(string model)
+    {
+        if (string.IsNullOrWhiteSpace(model))
+        {
+            return "--";
+        }
+
+        return model.Trim();
+    }
+
+    private static (string Text, Brush Brush) FormatAccessSummary(ControlUiProbeSnapshot snapshot)
+    {
+        return snapshot.Phase switch
+        {
+            ControlUiPhase.Connected => ("AUTH OK", SuccessBrush),
+            ControlUiPhase.AuthRequired => ("AUTH LOGIN", ErrorBrush),
+            ControlUiPhase.PairingRequired => ("AUTH PAIR", ErrorBrush),
+            ControlUiPhase.OriginRejected => ("AUTH ORIGIN", ErrorBrush),
+            ControlUiPhase.GatewayConnecting or ControlUiPhase.PageLoaded or ControlUiPhase.Loading => ("AUTH WAIT", WarningBrush),
+            _ => ("AUTH --", NeutralBrush),
+        };
+    }
+
+
+    private static (string Text, Brush Brush, RunIndicatorMode Mode) FormatWorkStatus(ControlUiProbeSnapshot snapshot)
+    {
+        if (snapshot.IsBusy || string.Equals(snapshot.WorkState, "busy", StringComparison.OrdinalIgnoreCase))
+        {
+            return ("LIVE", SuccessBrush, RunIndicatorMode.Live);
+        }
+
+        if (string.Equals(snapshot.WorkState, "idle", StringComparison.OrdinalIgnoreCase) ||
+            snapshot.Phase == ControlUiPhase.Connected)
+        {
+            return ("IDLE", SuccessBrush, RunIndicatorMode.Idle);
+        }
+
+        return ("WAIT", NeutralBrush, RunIndicatorMode.Wait);
+    }
+
+    public void AdvanceRunIndicators()
+    {
+        if (_runIndicatorMode != RunIndicatorMode.Live)
+        {
+            return;
+        }
+
+        _runAnimationFrame = (_runAnimationFrame + 1) % RunIndicatorCount;
+        ApplyRunIndicators();
+    }
+
+    private void SetRunIndicatorMode(RunIndicatorMode mode)
+    {
+        if (_runIndicatorMode == mode)
+        {
+            if (mode != RunIndicatorMode.Live)
+            {
+                ApplyRunIndicators();
+            }
+
+            return;
+        }
+
+        _runIndicatorMode = mode;
+        _runAnimationFrame = 0;
+        IsRunIndicatorsAnimating = mode == RunIndicatorMode.Live;
+        ApplyRunIndicators();
+    }
+
+    private void ApplyRunIndicators()
+    {
+        for (var index = 0; index < RunIndicators.Count; index++)
+        {
+            RunIndicators[index].FillBrush = CreateRunIndicatorBrush(_runIndicatorMode);
+            RunIndicators[index].FillOpacity = CreateRunIndicatorOpacity(_runIndicatorMode, index, _runAnimationFrame);
+        }
+    }
+
+    private static Brush CreateRunIndicatorBrush(RunIndicatorMode mode)
+    {
+        return mode switch
+        {
+            RunIndicatorMode.Idle or RunIndicatorMode.Live => SuccessBrush,
+            _ => NeutralBrush,
+        };
+    }
+
+    private static double CreateRunIndicatorOpacity(RunIndicatorMode mode, int index, int frame)
+    {
+        if (mode != RunIndicatorMode.Live)
+        {
+            var normalized = (index + 1d) / RunIndicatorCount;
+            return 0.24 + (normalized * 0.7);
+        }
+
+        // Wave sweep: dots near the wave head are brightest, fading behind.
+        var distance = (index - frame + RunIndicatorCount) % RunIndicatorCount;
+        var factor = 1d - (distance / (double)RunIndicatorCount);
+        return 0.18 + (factor * 0.78);
+    }
+
+    private void ResetTelemetry()
+    {
+        HeartbeatSummary = "HB --";
+        HeartbeatSummaryBrush = NeutralBrush;
+        ModelSummaryText = "--";
+        AccessSummaryText = "AUTH --";
+        AccessSummaryBrush = NeutralBrush;
+        WorkStatusText = "WAIT";
+        WorkStatusBrush = NeutralBrush;
+        SetRunIndicatorMode(RunIndicatorMode.Wait);
+
+        foreach (var indicator in HeartbeatIndicators)
+        {
+            indicator.FillBrush = CreateIndicatorBrush(HeartbeatProbeStatus.Connecting);
+        }
+
+        for (var index = 0; index < HeartbeatIndicators.Count; index++)
+        {
+            HeartbeatIndicators[index].FillOpacity = CreateIndicatorOpacity(index);
+        }
+    }
+
+    private static double CreateIndicatorOpacity(int index)
+    {
+        var normalized = (index + 1d) / HeartbeatIndicatorCount;
+        return 0.2 + (normalized * 0.65);
     }
 
     protected void OnPropertyChanged([CallerMemberName] string? name = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
+}
+
+public enum RunIndicatorMode
+{
+    Wait,
+    Idle,
+    Live,
 }
 
 /// <summary>
@@ -384,4 +742,32 @@ public class SimpleCommand : ICommand
     public bool CanExecute(object? parameter) => true;
 
     public void Execute(object? parameter) => _action();
+}
+
+public sealed class HeartbeatIndicatorViewModel : INotifyPropertyChanged
+{
+    private Brush _fillBrush = new SolidColorBrush(Color.FromArgb(255, 107, 114, 128));
+    private double _fillOpacity = 0.32;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public Brush FillBrush
+    {
+        get => _fillBrush;
+        set
+        {
+            _fillBrush = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FillBrush)));
+        }
+    }
+
+    public double FillOpacity
+    {
+        get => _fillOpacity;
+        set
+        {
+            _fillOpacity = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FillOpacity)));
+        }
+    }
 }

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using OpenClaw.Models;
+using OpenClaw.Services;
 
 namespace OpenClaw.ViewModels;
 
@@ -13,6 +14,7 @@ namespace OpenClaw.ViewModels;
 /// </summary>
 public class SettingsViewModel : INotifyPropertyChanged
 {
+    private const string DefaultValidationMessage = "All environments must have a unique name and a valid http(s) Control UI URL.";
     private readonly Dictionary<EnvironmentConfig, string> _originalNames = [];
     private readonly string? _originalSelectedEnvironmentName = App.Configuration.Settings.SelectedEnvironmentName;
     private EnvironmentConfig? _selectedEnvironment;
@@ -21,6 +23,7 @@ public class SettingsViewModel : INotifyPropertyChanged
     private bool _editIsDefault;
     private bool _isEditing;
     private string _selectedLanguage = "System";
+    private string _validationMessage = DefaultValidationMessage;
 
     public SettingsViewModel()
     {
@@ -81,6 +84,16 @@ public class SettingsViewModel : INotifyPropertyChanged
         set { _selectedLanguage = value; OnPropertyChanged(); }
     }
 
+    public string ValidationMessage
+    {
+        get => _validationMessage;
+        private set
+        {
+            _validationMessage = value;
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>
     /// Adds a new environment with placeholder values.
     /// </summary>
@@ -112,9 +125,26 @@ public class SettingsViewModel : INotifyPropertyChanged
     /// <summary>
     /// Applies edit field values back to the selected environment.
     /// </summary>
-    public void ApplyEdit()
+    public bool TryApplyEdit()
     {
-        if (_selectedEnvironment is null) return;
+        if (_selectedEnvironment is null)
+        {
+            ValidationMessage = "Select an environment first.";
+            return false;
+        }
+
+        var draft = new EnvironmentConfig
+        {
+            Name = EditName,
+            GatewayUrl = EditUrl,
+            IsDefault = EditIsDefault,
+        };
+
+        if (!TryValidateEnvironment(draft, out var errorMessage))
+        {
+            ValidationMessage = errorMessage;
+            return false;
+        }
 
         _selectedEnvironment.Name = EditName;
         _selectedEnvironment.GatewayUrl = EditUrl;
@@ -136,6 +166,8 @@ public class SettingsViewModel : INotifyPropertyChanged
 
         // Notify to refresh display
         OnPropertyChanged(nameof(Environments));
+        ValidationMessage = DefaultValidationMessage;
+        return true;
     }
 
     /// <summary>
@@ -144,11 +176,18 @@ public class SettingsViewModel : INotifyPropertyChanged
     /// </summary>
     public bool SaveAll()
     {
-        // Validate
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var env in Environments)
         {
-            if (string.IsNullOrWhiteSpace(env.Name) || string.IsNullOrWhiteSpace(env.GatewayUrl))
+            if (!TryValidateEnvironment(env, out var errorMessage))
             {
+                ValidationMessage = errorMessage;
+                return false;
+            }
+
+            if (!seenNames.Add(env.Name.Trim()))
+            {
+                ValidationMessage = $"Environment name '{env.Name}' is duplicated. Session isolation now uses environment names, so each environment name must be unique.";
                 return false;
             }
         }
@@ -168,8 +207,18 @@ public class SettingsViewModel : INotifyPropertyChanged
         // Save language
         App.Configuration.Settings.AppLanguage = SelectedLanguage;
 
+        foreach (var env in Environments)
+        {
+            if (_originalNames.TryGetValue(env, out var originalName))
+            {
+                WebViewService.TryMoveUserDataFolderToRenamedEnvironment(originalName, env.Name);
+                _originalNames[env] = env.Name;
+            }
+        }
+
         App.Configuration.Save();
         App.Logger.Info("Settings saved.");
+        ValidationMessage = DefaultValidationMessage;
         return true;
     }
 
@@ -212,5 +261,37 @@ public class SettingsViewModel : INotifyPropertyChanged
     protected void OnPropertyChanged([CallerMemberName] string? name = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    private static bool TryValidateEnvironment(EnvironmentConfig environment, out string errorMessage)
+    {
+        if (string.IsNullOrWhiteSpace(environment.Name))
+        {
+            errorMessage = "Environment name is required.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(environment.GatewayUrl))
+        {
+            errorMessage = "Gateway URL is required.";
+            return false;
+        }
+
+        if (!Uri.TryCreate(environment.GatewayUrl.Trim(), UriKind.Absolute, out var uri))
+        {
+            errorMessage = "Gateway URL must be an absolute URL.";
+            return false;
+        }
+
+        if (uri.Scheme is not ("http" or "https"))
+        {
+            errorMessage = uri.Scheme is "ws" or "wss"
+                ? "Use the Control UI page URL here (http/https), not the Gateway WebSocket URL (ws/wss)."
+                : "Gateway URL must use http or https.";
+            return false;
+        }
+
+        errorMessage = DefaultValidationMessage;
+        return true;
     }
 }

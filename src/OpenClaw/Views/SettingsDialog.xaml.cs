@@ -65,6 +65,7 @@ public sealed partial class SettingsDialog : Window
     {
         PanelLanguage.Visibility = tag == "Language" ? Visibility.Visible : Visibility.Collapsed;
         PanelEnvironments.Visibility = tag == "Environments" ? Visibility.Visible : Visibility.Collapsed;
+        PanelSessions.Visibility = tag == "Sessions" ? Visibility.Visible : Visibility.Collapsed;
         PanelDevTools.Visibility = tag == "DevTools" ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -118,7 +119,13 @@ public sealed partial class SettingsDialog : Window
 
     private void OnApplyClick(object sender, RoutedEventArgs e)
     {
-        ViewModel.ApplyEdit();
+        if (!ViewModel.TryApplyEdit())
+        {
+            ShowEnvironmentMessage("Validation Error", InfoBarSeverity.Error);
+            return;
+        }
+
+        ValidationInfoBar.IsOpen = false;
         var selected = EnvironmentList.SelectedIndex;
         EnvironmentList.ItemsSource = null;
         EnvironmentList.ItemsSource = ViewModel.Environments;
@@ -134,7 +141,11 @@ public sealed partial class SettingsDialog : Window
     {
         if (ViewModel.IsEditing)
         {
-            ViewModel.ApplyEdit();
+            if (!ViewModel.TryApplyEdit())
+            {
+                ShowEnvironmentMessage("Validation Error", InfoBarSeverity.Error);
+                return;
+            }
         }
 
         if (ViewModel.SaveAll())
@@ -146,7 +157,7 @@ public sealed partial class SettingsDialog : Window
         }
         else
         {
-            ValidationInfoBar.IsOpen = true;
+            ShowEnvironmentMessage("Validation Error", InfoBarSeverity.Error);
         }
     }
 
@@ -174,9 +185,32 @@ public sealed partial class SettingsDialog : Window
         this.Close();
     }
 
-    private void OnClearSessionClick(object sender, RoutedEventArgs e)
+    private async void OnClearEnvironmentSessionClick(object sender, RoutedEventArgs e)
     {
-        MainViewModel?.ClearSessionCommand.Execute(null);
-        this.Close();
+        if (MainViewModel is null ||
+            sender is not Button button ||
+            button.Tag is not string environmentName ||
+            string.IsNullOrWhiteSpace(environmentName))
+        {
+            SessionInfoBar.Title = "Session Reset";
+            SessionInfoBar.Severity = InfoBarSeverity.Warning;
+            SessionInfoBar.Message = "Select an environment to clear its session.";
+            SessionInfoBar.IsOpen = true;
+            return;
+        }
+
+        await MainViewModel.ClearSessionForEnvironmentAsync(environmentName);
+        SessionInfoBar.Title = "Session Reset";
+        SessionInfoBar.Severity = InfoBarSeverity.Informational;
+        SessionInfoBar.Message = $"Cleared the saved session for '{environmentName}'.";
+        SessionInfoBar.IsOpen = true;
+    }
+
+    private void ShowEnvironmentMessage(string title, InfoBarSeverity severity, string? message = null)
+    {
+        ValidationInfoBar.Title = title;
+        ValidationInfoBar.Severity = severity;
+        ValidationInfoBar.Message = message ?? ViewModel.ValidationMessage;
+        ValidationInfoBar.IsOpen = true;
     }
 }

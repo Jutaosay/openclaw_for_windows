@@ -36,6 +36,7 @@ public static class StringResources
     // --- Status Bar ---
     public static string StatusConnected => Get("StatusConnected");
     public static string StatusLoading => Get("StatusLoading");
+    public static string StatusGatewayConnecting => Get("StatusGatewayConnecting");
     public static string StatusReconnecting => Get("StatusReconnecting");
     public static string StatusAuthFailed => Get("StatusAuthFailed");
     public static string StatusError => Get("StatusError");

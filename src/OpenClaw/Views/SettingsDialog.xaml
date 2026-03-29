@@ -46,6 +46,12 @@
                             <TextBlock Text="Environments" FontSize="13" VerticalAlignment="Center" />
                         </StackPanel>
                     </ListViewItem>
+                    <ListViewItem x:Name="NavSessions" Tag="Sessions">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                            <TextBlock Text="Sessions" FontSize="13" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListViewItem>
                     <ListViewItem x:Name="NavDevTools" Tag="DevTools">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE9D9;" FontSize="14" />
@@ -141,6 +147,11 @@
                                  PlaceholderText="https://your-gateway.example.com"
                                  Text="{x:Bind ViewModel.EditUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
+                        <TextBlock Text="Use the hosted Control UI page URL (`http://` or `https://`), not the Gateway WebSocket URL."
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap" />
+
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <CheckBox x:Name="DefaultCheckBox"
                                       Content="Set as default"
@@ -155,7 +166,53 @@
                                  IsOpen="False"
                                  Severity="Error"
                                  Title="Validation Error"
-                                 Message="All environments must have a name and URL." />
+                                 Message="{x:Bind ViewModel.ValidationMessage, Mode=OneWay}" />
+                    </StackPanel>
+
+                    <!-- ======= Panel: Sessions ======= -->
+                    <StackPanel x:Name="PanelSessions" Spacing="12" Visibility="Collapsed">
+                        <TextBlock Text="Environment Sessions"
+                                   Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="Each environment uses its own WebView2Data profile. Clear only the environment you want to reset."
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   FontSize="13"
+                                   TextWrapping="Wrap" />
+
+                        <InfoBar x:Name="SessionInfoBar"
+                                 IsOpen="False"
+                                 Severity="Informational"
+                                 Title="Session Reset" />
+
+                        <ListView x:Name="SessionEnvironmentList"
+                                  ItemsSource="{x:Bind ViewModel.Environments}"
+                                  SelectionMode="None">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding GatewayUrl}"
+                                                       FontSize="12"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+
+                                        <Button Grid.Column="1"
+                                                Content="Clear Session"
+                                                Tag="{Binding Name}"
+                                                Click="OnClearEnvironmentSessionClick"
+                                                Margin="12,0,0,0" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
                     </StackPanel>
 
                     <!-- ======= Panel: Developer Tools ======= -->
@@ -183,12 +240,6 @@
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <FontIcon Glyph="&#xEC7A;" FontSize="14" />
                                     <TextBlock Text="Open DevTools" />
-                                </StackPanel>
-                            </Button>
-                            <Button HorizontalAlignment="Stretch" Click="OnClearSessionClick">
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <FontIcon Glyph="&#xE74D;" FontSize="14" />
-                                    <TextBlock Text="Clear Session" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>

@@ -64,6 +64,9 @@
   <data name="StatusLoading" xml:space="preserve">
     <value>加载中...</value>
   </data>
+  <data name="StatusGatewayConnecting" xml:space="preserve">
+    <value>正在连接网关...</value>
+  </data>
   <data name="StatusReconnecting" xml:space="preserve">
     <value>重新连接中...</value>
   </data>
@@ -141,7 +144,7 @@
 
   <!-- 心跳检测 -->
   <data name="StatusHeartbeatFailed" xml:space="preserve">
-    <value>心跳丢失 — 正在重连…</value>
+    <value>心跳丢失，正在重连...</value>
   </data>
 
 </root>
