@@ -2,23 +2,33 @@
 
 Lightweight Windows-native OpenClaw remote management shell built with WinUI 3 and WebView2.
 
-基于 WinUI 3 与 WebView2 的轻量级 Windows 原生 OpenClaw 远程管理客户端。
+OpenClaw Manager is a thin desktop shell for the hosted OpenClaw Control UI. It is designed for remote Gateway deployments running on a VPS and exposed through Cloudflare Tunnel, reverse proxy, or another public HTTPS origin.
 
 ---
 
-## Overview / 概述
+## Overview
 
-OpenClaw Manager is a thin native shell around the existing OpenClaw Web UI. It is designed for users who run OpenClaw Gateway remotely on a VPS and access it through Cloudflare Tunnel, reverse proxy, or WSS.
+This project keeps the existing OpenClaw web experience, but wraps it in a native WinUI 3 window with:
 
-OpenClaw Manager 是对现有 OpenClaw Web UI 的原生薄壳封装，适合将 OpenClaw Gateway 部署在 VPS 上并通过 Cloudflare Tunnel、反向代理或 WSS 远程访问的场景。
+- environment switching
+- per-environment WebView2 session isolation
+- connection recovery and heartbeat monitoring
+- diagnostics and structured logs
+- native theme and window integration
 
-### This project is / 本项目是
+It is best suited for users who:
+
+- run OpenClaw Gateway remotely
+- access it through Cloudflare Tunnel or a reverse proxy
+- want a lightweight Windows-native client instead of keeping a browser tab open
+
+### This project is
 
 - A WinUI 3 + WebView2 remote management shell
-- A Windows-native entry point for OpenClaw remote control
-- A thin client that enhances the existing Web UI with native UX
+- A Windows-native entry point for hosted OpenClaw Control UI sessions
+- A thin client that enhances the existing web UI with native UX
 
-### This project is not / 本项目不是
+### This project is not
 
 - A local Gateway or node host
 - A full native rewrite of the OpenClaw frontend
@@ -26,7 +36,7 @@ OpenClaw Manager 是对现有 OpenClaw Web UI 的原生薄壳封装，适合将 
 
 ---
 
-## Tech Stack / 技术栈
+## Tech Stack
 
 | Component | Version |
 |---|---|
@@ -34,12 +44,12 @@ OpenClaw Manager 是对现有 OpenClaw Web UI 的原生薄壳封装，适合将 
 | Windows App SDK | 1.8.x |
 | WebView2 | Bundled via WinAppSDK |
 | MVVM | CommunityToolkit.Mvvm 8.x |
-| UI Language | English + 中文 |
+| UI Language | English + Simplified Chinese |
 | Packaging | Unpackaged, self-contained |
 
 ---
 
-## Project Structure / 项目结构
+## Project Structure
 
 ```text
 Claw_winui3/
@@ -64,33 +74,29 @@ Claw_winui3/
     `-- Views/
 ```
 
-### Key folders / 主要目录
+### Key folders
 
-- `Services/`: configuration, logging, diagnostics, WebView2 lifecycle
+- `Services/`: configuration, logging, diagnostics, WebView2 lifecycle, recovery helpers
 - `ViewModels/`: shell state, commands, settings editing
-- `Views/`: settings, about, log viewer dialogs
+- `Views/`: settings, about, and log viewer dialogs
 - `Strings/`: localized UI resources
 
 ---
 
-## Runtime Requirements / 运行环境
+## Runtime Requirements
 
-The compiled application requires the following:
-
-程序运行需要以下组件：
+The compiled application requires:
 
 | Dependency | Download |
 |---|---|
 | .NET 10 Desktop Runtime | [Download](https://dotnet.microsoft.com/download/dotnet/10.0) |
 | WebView2 Runtime | [Download](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) |
 
-Note: Windows 11 usually already includes WebView2 Runtime. Windows 10 users may need to install it manually.
-
-注：Windows 11 通常已自带 WebView2 Runtime，Windows 10 用户可能需要手动安装。
+Windows 11 usually already includes WebView2 Runtime. Windows 10 users may need to install it manually.
 
 ---
 
-## Development Prerequisites / 开发前置要求
+## Development Prerequisites
 
 - Windows 10 1809+ or Windows 11
 - Visual Studio 2026
@@ -100,7 +106,7 @@ Note: Windows 11 usually already includes WebView2 Runtime. Windows 10 users may
 
 ---
 
-## Getting Started / 快速开始
+## Getting Started
 
 ### Visual Studio
 
@@ -115,63 +121,76 @@ dotnet restore src\OpenClaw\OpenClaw.csproj
 dotnet build src\OpenClaw\OpenClaw.csproj -r win-x64
 ```
 
-### First Launch / 首次启动
+### First Launch
 
 1. The app starts with a placeholder environment.
 2. Open Settings from the top bar.
-3. Add your OpenClaw Gateway URL, for example `https://your-gateway.example.com`.
+3. Add your public OpenClaw Control UI URL, for example `https://your-gateway.example.com`.
 4. Save settings and the embedded WebView2 shell will load the remote UI.
+
+### Cloudflare Tunnel / VPS Notes
+
+If your OpenClaw Gateway runs on a VPS behind Cloudflare Tunnel:
+
+- use the public HTTPS Control UI URL in OpenClaw Manager
+- do not use the raw Gateway WebSocket URL
+- make sure the same public origin is listed in `gateway.controlUi.allowedOrigins`
+- make sure the tunnel or reverse proxy preserves the original host and scheme
+
+If the page loads but OpenClaw reports origin rejection, check the exact public origin string and proxy forwarding rules first.
 
 ---
 
-## Features / 功能
+## Features
 
 | Feature | Description |
 |---|---|
 | WebView2 Shell | Hosts the remote OpenClaw UI inside a native window |
-| Environment Switching | Manage multiple gateway endpoints |
+| Environment Switching | Manage multiple hosted Control UI endpoints |
 | Connection Status | Status bar, error InfoBar, retry support |
 | Auto-Reconnect | Retries failed navigation automatically |
-| Heartbeat | Periodic gateway probe with reconnect on repeated failures |
+| Heartbeat | Periodic Control UI and transport probe with configurable reconnect thresholds |
 | Session Isolation | Separate WebView2 profile data per configured environment |
 | Theme | Top-bar segmented switcher for System, Light, and Dark |
-| Language | English, 中文, System |
+| Language | English, Simplified Chinese, System |
 | Diagnostics | Runtime, network, and session checks |
 | Log Viewer | View today's log and open the log folder |
 | DevTools | Open WebView2 developer tools |
 
 ---
 
-## Settings / 设置
+## Settings
 
 The Settings window is organized into four sections:
 
-设置窗口分为三个分区：
-
 | Section | Content |
 |---|---|
-| Environments | Add, edit, remove, and choose default gateway environments |
+| Environments | Add, edit, remove, and choose default hosted Control UI endpoints |
 | Language | Display language |
 | Sessions | Clear WebView2 session data for a specific environment |
 | Developer Tools | Diagnostics, logs, DevTools |
 
+### Environment URL Rules
+
+- Use the hosted Control UI page URL with `http://` or `https://`
+- Do not use the raw Gateway WebSocket URL with `ws://` or `wss://`
+- For Cloudflare Tunnel or reverse-proxy deployments, always use the exact public browser-facing origin
+
 ---
 
-## Data Storage / 数据存储
+## Data Storage
 
 All local data is stored under `%LOCALAPPDATA%\OpenClaw\`.
 
-所有本地数据存储在 `%LOCALAPPDATA%\OpenClaw\` 下。
-
 | Path | Content |
 |---|---|
-| `settings.json` | Environment configs, theme, language, window state |
+| `settings.json` | Environment configs, theme, language, heartbeat settings, window state |
 | `logs/` | Daily log files |
 | `WebView2Data/` | WebView2 profile data, cookies, cache |
 
 ---
 
-## Architecture / 架构
+## Architecture
 
 ```text
 MainWindow
@@ -181,109 +200,31 @@ MainWindow
 `- WebViewService
 ```
 
-Design principle: remote-first thin shell. The actual OpenClaw runtime lives on the VPS; this app is a native control surface.
-
-设计原则：远程优先的轻量外壳。真正的 OpenClaw 运行时部署在 VPS 上，本应用只负责提供原生控制界面。
+Design principle: remote-first thin shell. The actual OpenClaw runtime lives on the VPS; this app is a native control surface for the hosted Control UI.
 
 ---
 
-## Recent Changes / 最近更新
+## Recent Changes
 
-### v2.0.4 (2026-03-29)
+### v2.1.0 (2026-04-19)
 
-- Routine bug fixes and stability improvements. / 常规问题修复与稳定性提升。
+- Unified heartbeat settings so runtime behavior now respects the configured enable flag and reconnect thresholds.
+- Added settings normalization so legacy `heartbeatIntervalSeconds` values migrate cleanly into the newer heartbeat settings object.
+- Added explicit disposal for `WebViewService`, `HostedUiBridge`, `ShellSessionCoordinator`, and main-window event subscriptions during shutdown.
+- Improved diagnostics and settings guidance for Cloudflare Tunnel and reverse-proxy deployments, especially around `gateway.controlUi.allowedOrigins`.
+- Clarified that environment URLs must use the public hosted Control UI page origin rather than the raw Gateway WebSocket endpoint.
 
+### v2.0.9 (2026-03-31)
 
-### v2.0.3 (2026-03-29)
+- Refined the recovery architecture so heartbeat, event-gap handling, and background resume all prefer in-page reconnect or soft resync before falling back to a hard reload.
+- Added input-focus-aware recovery guards to reduce unexpected refreshes while typing.
+- Removed the last dead duplicate bridge constant from `WebViewService`, leaving `HostedUiBridge` as the single injected page bridge.
+- Polished the top status strip layout so heartbeat summary and indicators each occupy their own centered lane.
+- Fixed the top heartbeat badge staying gray by preventing duplicate heartbeat restarts from resetting the timer before the first probe completed.
+- Tightened the top status strip spacing so `HB`, `MODEL`, `AUTH`, and `Status` read more evenly without over-compressing the model label.
 
-- Replaced the Live run indicator dot matrix animation from green/yellow alternation to a single green wave sweep with opacity gradient (light → dark).
-- Improved 1-day token data refresh timing by triggering background cache refresh on each status probe and reducing the refresh interval from 30s to 15s.
+### v2.0.6 (2026-03-30)
 
-### v2.0.2 (2026-03-29)
-
-- Fixed the retry button state so it cleanly collapses again after the connection recovers.
-- Refactored the top status telemetry flow to centralize heartbeat, auth, and run-state formatting.
-- Reduced patch layering by consolidating the current shell state logic and aligning the documentation with the shipped behavior.
-
-### v2.0.1 (2026-03-28)
-
-- Tuned the top status bar layout again so the 1-day tokens, auth badge, and run state each sit in their own centered lane.
-- Changed the 1-day token value styling to green text and aligned the latest shell polish with version `2.0.1`.
-
-### v2.0.0 (2026-03-28)
-
-- Added the new native top status bar that summarizes heartbeat health, top 1-hour model usage, and current work state.
-- Refined reverse-proxy-aware heartbeat recovery and tightened the telemetry bridge so status reporting follows the documented OpenClaw surfaces more closely.
-
-### v1.0.9 (2026-03-28)
-
-- Refined heartbeat recovery for reverse proxy and Cloudflare Tunnel scenarios by prioritizing hosted Control UI session health before transport-only probes.
-- Added throttled auto-refresh behavior so repeated Gateway reconnect loops do not cause refresh thrash through remote tunnels and proxies.
-
-### v1.0.8 (2026-03-28)
-
-- Rolled the shell version forward to `1.0.8` for the latest desktop integration pass and verification cycle.
-
-### v1.0.7 (2026-03-28)
-
-- Updated the main window to use Mica Alt as the true backdrop layer instead of painting opaque client-area colors over it.
-- Reworked the title bar surface so app icon/text and caption buttons stay visually aligned with active and inactive window states.
-- Kept the existing non-client frame refresh safeguards in place to reduce the chance of the dark-theme top-edge white line returning.
-
-### v1.0.6 (2026-03-27)
-
-- Refined the hosted Control UI connection model so the shell now distinguishes page load from actual Gateway session readiness.
-- Upgraded diagnostics to surface authentication, pairing, redirect, base-path, and origin-related failures more accurately.
-- Changed the Stop action to prefer the hosted UI's own abort flow before falling back to `/stop` injection.
-- Split WebView2 session storage by environment name and added per-environment session clearing in Settings.
-- Tightened environment URL validation so the shell accepts only hosted Control UI `http(s)` addresses.
-
-### v1.0.5 (2026-03-25)
-
-- Restored the top-bar refresh action and brought back the stop action with in-page `/stop` command injection fallback.
-- Unified the app, About, and shell branding with the OpenClaw logo asset.
-
-### v1.0.4 (2026-03-25)
-
-- Replaced the application and shell branding icons with the OpenClaw logo for a more consistent visual identity.
-- Kept the dark-titlebar edge fix stable after icon and title bar polish changes.
-
-### v1.0.3 (2026-03-25)
-
-- Fixed the dark-titlebar top-edge white line by strengthening native window frame refresh when switching from Light to Dark.
-- Stabilized custom title bar rendering so the issue no longer reappears after the initial dark-mode transition.
-
-### v1.0.2 (2026-03-25)
-
-- Fixed language fallback so switching back to `System` correctly clears the explicit language override.
-- Fixed selected-environment persistence when an environment is renamed in Settings.
-- Cleaned up several user-facing text encoding issues in diagnostics and shell UI.
-- Hardened a few view-model bindings used by the main shell window.
-- Removed rarely used top-bar actions for reload, stop, and quick commands to simplify the shell UI.
-- Moved theme switching back to the top bar for direct one-click access.
-
-### v1.0.1 (2026-03-22)
-
-- Added heartbeat probing with automatic reconnect after repeated failures.
-- Added `HeartbeatIntervalSeconds` setting, default `30`, `0` disables heartbeat.
-- Added heartbeat failure status messaging.
-
-### v1.0.0 (2026-03-19)
-
-- First stable release.
-- Improved language settings layout.
-- Expanded runtime requirement documentation.
-
----
-
-## License / 许可
-
-TBD
-
----
-
-Developed by [@Jutaosay](https://github.com/Jutaosay) · [GitHub Repository](https://github.com/Jutaosay/openclaw_for_windows)
-
-Current version: 2.0.4
-
-Last updated: 2026-03-29
+- Consolidated hosted UI snapshot ownership under `WebViewService` and reduced duplicate status pipelines.
+- Hardened WebView recreation and bridge reattachment behavior to avoid stale subscriptions.
+- Localized heartbeat summary text in both English and Chinese.
