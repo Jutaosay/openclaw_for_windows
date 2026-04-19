@@ -65,7 +65,7 @@ public class DiagnosticService
                     snapshot.DetailOrSummary),
                 ControlUiPhase.OriginRejected => DiagnosticResult.Warn(
                     "Control UI reachable, but the remote origin was rejected.",
-                    snapshot.DetailOrSummary),
+                    $"{snapshot.DetailOrSummary} Verify that the exact public HTTPS origin exposed by Cloudflare Tunnel or your reverse proxy is present in gateway.controlUi.allowedOrigins."),
                 ControlUiPhase.GatewayError => DiagnosticResult.Warn(
                     "Control UI reachable, but the Gateway WebSocket session is failing.",
                     snapshot.DetailOrSummary),
@@ -87,7 +87,7 @@ public class DiagnosticService
                 401 or 403 =>
                     DiagnosticResult.Warn(
                         $"Control UI reachable but access was rejected ({statusCode})",
-                        "The endpoint is up, but authentication, password, token, or origin validation blocked the session."),
+                        "The endpoint is up, but authentication, password, token, or origin validation blocked the session. For Cloudflare Tunnel or reverse-proxy deployments, also verify that the public HTTPS origin is allowed by gateway.controlUi.allowedOrigins."),
                 405 =>
                     DiagnosticResult.Warn(
                         "Control UI reachable but the request method/path was rejected (405)",
@@ -95,11 +95,11 @@ public class DiagnosticService
                 301 or 302 or 303 or 307 or 308 =>
                     DiagnosticResult.Warn(
                         $"Control UI reachable but redirected ({statusCode})",
-                        "Verify the configured Control UI URL, gateway.controlUi.basePath, and any reverse-proxy rewrite rules."),
+                        "Verify the configured Control UI URL, gateway.controlUi.basePath, and any Cloudflare Tunnel or reverse-proxy rewrite rules."),
                 404 =>
                     DiagnosticResult.Warn(
                         "Control UI reachable but the requested path was not found (404)",
-                        "This often means the configured URL is missing the correct base path."),
+                        "This often means the configured URL is missing the correct Control UI base path or the reverse proxy is forwarding the wrong route."),
                 >= 500 =>
                     DiagnosticResult.Fail(
                         $"Gateway returned {statusCode} {response.ReasonPhrase}",
@@ -151,7 +151,9 @@ public class DiagnosticService
                 string.IsNullOrWhiteSpace(snapshot.Detail) ? "The page is loaded, but the Gateway session is still being established." : snapshot.Detail),
             ControlUiPhase.AuthRequired => DiagnosticResult.Warn(snapshot.Summary, snapshot.DetailOrSummary),
             ControlUiPhase.PairingRequired => DiagnosticResult.Warn(snapshot.Summary, snapshot.DetailOrSummary),
-            ControlUiPhase.OriginRejected => DiagnosticResult.Fail(snapshot.Summary, snapshot.DetailOrSummary),
+            ControlUiPhase.OriginRejected => DiagnosticResult.Fail(
+                snapshot.Summary,
+                $"{snapshot.DetailOrSummary} Confirm that the public HTTPS Control UI origin is listed in gateway.controlUi.allowedOrigins."),
             ControlUiPhase.GatewayError => DiagnosticResult.Fail(snapshot.Summary, snapshot.DetailOrSummary),
             _ => DiagnosticResult.Skip("No page loaded.")
         };

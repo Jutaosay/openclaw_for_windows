@@ -54,6 +54,21 @@ public class AppSettings
     /// Default is 30s, which works well with Cloudflare Tunnel / reverse proxy idle timeouts (60-100s).
     /// </summary>
     public int HeartbeatIntervalSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// Gets or sets the connection recovery policy options.
+    /// </summary>
+    public RecoveryPolicyOptions RecoveryPolicy { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the heartbeat options.
+    /// </summary>
+    public HeartbeatOptions Heartbeat { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the diagnostics options.
+    /// </summary>
+    public DiagnosticsOptions Diagnostics { get; set; } = new();
 }
 
 /// <summary>
@@ -61,6 +76,9 @@ public class AppSettings
 /// Enables AOT-friendly JSON serialization for AppSettings.
 /// </summary>
 [JsonSerializable(typeof(AppSettings))]
+[JsonSerializable(typeof(RecoveryPolicyOptions))]
+[JsonSerializable(typeof(HeartbeatOptions))]
+[JsonSerializable(typeof(DiagnosticsOptions))]
 [JsonSourceGenerationOptions(
     WriteIndented = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]

@@ -146,5 +146,37 @@
   <data name="StatusHeartbeatFailed" xml:space="preserve">
     <value>心跳丢失，正在重连...</value>
   </data>
+  <data name="HeartbeatOk" xml:space="preserve">
+    <value>心跳正常</value>
+  </data>
+  <data name="HeartbeatWait" xml:space="preserve">
+    <value>心跳等待</value>
+  </data>
+  <data name="HeartbeatBlocked" xml:space="preserve">
+    <value>心跳阻塞</value>
+  </data>
+  <data name="HeartbeatFailed" xml:space="preserve">
+    <value>心跳失败</value>
+  </data>
+
+  <!-- Phase 2 - Recovery States -->
+  <data name="RecoveryConnecting" xml:space="preserve">
+    <value>连接中...</value>
+  </data>
+  <data name="RecoveryReconnecting" xml:space="preserve">
+    <value>重新连接中...</value>
+  </data>
+  <data name="RecoveryResyncing" xml:space="preserve">
+    <value>同步会话中...</value>
+  </data>
+  <data name="RecoveryRefreshing" xml:space="preserve">
+    <value>刷新页面中...</value>
+  </data>
+  <data name="RecoveryDegraded" xml:space="preserve">
+    <value>连接质量下降</value>
+  </data>
+  <data name="RecoveryFailed" xml:space="preserve">
+    <value>恢复失败，需要手动操作</value>
+  </data>
 
 </root>

@@ -42,6 +42,18 @@ public static class StringResources
     public static string StatusError => Get("StatusError");
     public static string StatusOffline => Get("StatusOffline");
     public static string StatusHeartbeatFailed => Get("StatusHeartbeatFailed");
+    public static string HeartbeatOk => Get("HeartbeatOk");
+    public static string HeartbeatWait => Get("HeartbeatWait");
+    public static string HeartbeatBlocked => Get("HeartbeatBlocked");
+    public static string HeartbeatFailed => Get("HeartbeatFailed");
+
+    // --- Recovery States ---
+    public static string RecoveryConnecting => Get("RecoveryConnecting");
+    public static string RecoveryReconnecting => Get("RecoveryReconnecting");
+    public static string RecoveryResyncing => Get("RecoveryResyncing");
+    public static string RecoveryRefreshing => Get("RecoveryRefreshing");
+    public static string RecoveryDegraded => Get("RecoveryDegraded");
+    public static string RecoveryFailed => Get("RecoveryFailed");
 
     // --- Settings Dialog ---
     public static string SettingsTitle => Get("SettingsTitle");

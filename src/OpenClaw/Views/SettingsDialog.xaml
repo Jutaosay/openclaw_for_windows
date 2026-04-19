@@ -93,9 +93,9 @@
                     <StackPanel x:Name="PanelEnvironments" Spacing="12" Visibility="Collapsed">
                         <TextBlock Text="Gateway Environments"
                                    Style="{StaticResource SubtitleTextBlockStyle}" />
-                        <TextBlock Text="Manage your OpenClaw Gateway connections."
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   FontSize="13" />
+                        <TextBlock Text="Manage your OpenClaw Control UI endpoints."
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="13" />
 
                         <!-- Environment list -->
                         <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
@@ -143,11 +143,16 @@
                                  Text="{x:Bind ViewModel.EditName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBox x:Name="UrlTextBox"
-                                 Header="Gateway URL"
+                                 Header="Control UI URL"
                                  PlaceholderText="https://your-gateway.example.com"
                                  Text="{x:Bind ViewModel.EditUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <TextBlock Text="Use the hosted Control UI page URL (`http://` or `https://`), not the Gateway WebSocket URL."
+                        <TextBlock Text="Use the public hosted Control UI page URL (`http://` or `https://`), not the Gateway WebSocket URL. If you connect through Cloudflare Tunnel or another reverse proxy, this should be the exact public origin exposed to the browser."
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="12"
+                                    TextWrapping="Wrap" />
+
+                        <TextBlock Text="If the page loads but OpenClaw reports origin rejection, add this exact origin to `gateway.controlUi.allowedOrigins` and make sure the reverse proxy / Cloudflare Tunnel preserves the original host and scheme."
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    FontSize="12"
                                    TextWrapping="Wrap" />

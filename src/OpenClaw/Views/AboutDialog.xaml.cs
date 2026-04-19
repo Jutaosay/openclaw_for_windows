@@ -17,6 +17,6 @@ public sealed partial class AboutDialog : ContentDialog
         var version = Assembly.GetExecutingAssembly().GetName().Version;
         VersionText.Text = version is not null
             ? $"Version {version.Major}.{version.Minor}.{version.Build}"
-            : "Version 2.0.4";
+            : "Version 2.1.0";
     }
 }

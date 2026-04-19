@@ -39,6 +39,7 @@ public class ConfigurationService
                     var settings = JsonSerializer.Deserialize(json, AppSettingsJsonContext.Default.AppSettings);
                     if (settings is not null)
                     {
+                        NormalizeSettings(settings, json);
                         Settings = settings;
                         return;
                     }
@@ -63,6 +64,7 @@ public class ConfigurationService
                 ],
                 SelectedEnvironmentName = "Default",
             };
+            NormalizeSettings(Settings);
             Save();
         }
     }
@@ -76,6 +78,7 @@ public class ConfigurationService
         {
             try
             {
+                NormalizeSettings(Settings);
                 Directory.CreateDirectory(AppDataFolder);
                 var json = JsonSerializer.Serialize(Settings, AppSettingsJsonContext.Default.AppSettings);
                 File.WriteAllText(SettingsFilePath, json);
@@ -110,5 +113,49 @@ public class ConfigurationService
         }
 
         return GetDefaultEnvironment();
+    }
+
+    private static void NormalizeSettings(AppSettings settings, string? rawJson = null)
+    {
+        settings.Heartbeat ??= new HeartbeatOptions();
+        settings.Heartbeat.IntervalSeconds = Math.Max(0, settings.Heartbeat.IntervalSeconds);
+        settings.Heartbeat.FailureThreshold = Math.Max(1, settings.Heartbeat.FailureThreshold);
+        settings.Heartbeat.ConnectingThreshold = Math.Max(1, settings.Heartbeat.ConnectingThreshold);
+        settings.HeartbeatIntervalSeconds = Math.Max(0, settings.HeartbeatIntervalSeconds);
+
+        var hasLegacyInterval = false;
+        var hasHeartbeatObject = false;
+        var hasHeartbeatInterval = false;
+
+        if (!string.IsNullOrWhiteSpace(rawJson))
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(rawJson);
+                var root = document.RootElement;
+                hasLegacyInterval = root.TryGetProperty("heartbeatIntervalSeconds", out _);
+
+                if (root.TryGetProperty("heartbeat", out var heartbeatElement) &&
+                    heartbeatElement.ValueKind == JsonValueKind.Object)
+                {
+                    hasHeartbeatObject = true;
+                    hasHeartbeatInterval = heartbeatElement.TryGetProperty("intervalSeconds", out _);
+                }
+            }
+            catch (JsonException)
+            {
+                // Deserialization already succeeded; leave normalization on the object graph only.
+            }
+        }
+
+        if (hasLegacyInterval && (!hasHeartbeatObject || !hasHeartbeatInterval))
+        {
+            settings.Heartbeat.IntervalSeconds = settings.HeartbeatIntervalSeconds;
+            settings.Heartbeat.EnableHeartbeat = settings.HeartbeatIntervalSeconds > 0;
+        }
+
+        settings.HeartbeatIntervalSeconds = settings.Heartbeat.EnableHeartbeat
+            ? settings.Heartbeat.IntervalSeconds
+            : 0;
     }
 }

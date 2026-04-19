@@ -146,5 +146,37 @@
   <data name="StatusHeartbeatFailed" xml:space="preserve">
     <value>Gateway heartbeat lost - refreshing...</value>
   </data>
+  <data name="HeartbeatOk" xml:space="preserve">
+    <value>HB OK</value>
+  </data>
+  <data name="HeartbeatWait" xml:space="preserve">
+    <value>HB WAIT</value>
+  </data>
+  <data name="HeartbeatBlocked" xml:space="preserve">
+    <value>HB BLOCK</value>
+  </data>
+  <data name="HeartbeatFailed" xml:space="preserve">
+    <value>HB FAIL</value>
+  </data>
+
+  <!-- Phase 2 - Recovery States -->
+  <data name="RecoveryConnecting" xml:space="preserve">
+    <value>Connecting...</value>
+  </data>
+  <data name="RecoveryReconnecting" xml:space="preserve">
+    <value>Reconnecting...</value>
+  </data>
+  <data name="RecoveryResyncing" xml:space="preserve">
+    <value>Resyncing session...</value>
+  </data>
+  <data name="RecoveryRefreshing" xml:space="preserve">
+    <value>Refreshing page...</value>
+  </data>
+  <data name="RecoveryDegraded" xml:space="preserve">
+    <value>Connection degraded</value>
+  </data>
+  <data name="RecoveryFailed" xml:space="preserve">
+    <value>Recovery failed - manual action required</value>
+  </data>
 
 </root>

@@ -14,7 +14,7 @@ namespace OpenClaw.ViewModels;
 /// </summary>
 public class SettingsViewModel : INotifyPropertyChanged
 {
-    private const string DefaultValidationMessage = "All environments must have a unique name and a valid http(s) Control UI URL.";
+    private const string DefaultValidationMessage = "All environments must have a unique name and a valid http(s) Control UI URL. For Cloudflare Tunnel or reverse-proxy deployments, use the public HTTPS Control UI URL and keep gateway.controlUi.allowedOrigins in sync with its exact origin.";
     private readonly Dictionary<EnvironmentConfig, string> _originalNames = [];
     private readonly string? _originalSelectedEnvironmentName = App.Configuration.Settings.SelectedEnvironmentName;
     private EnvironmentConfig? _selectedEnvironment;
@@ -273,13 +273,13 @@ public class SettingsViewModel : INotifyPropertyChanged
 
         if (string.IsNullOrWhiteSpace(environment.GatewayUrl))
         {
-            errorMessage = "Gateway URL is required.";
+            errorMessage = "Control UI URL is required.";
             return false;
         }
 
         if (!Uri.TryCreate(environment.GatewayUrl.Trim(), UriKind.Absolute, out var uri))
         {
-            errorMessage = "Gateway URL must be an absolute URL.";
+            errorMessage = "Control UI URL must be an absolute URL.";
             return false;
         }
 
@@ -287,7 +287,7 @@ public class SettingsViewModel : INotifyPropertyChanged
         {
             errorMessage = uri.Scheme is "ws" or "wss"
                 ? "Use the Control UI page URL here (http/https), not the Gateway WebSocket URL (ws/wss)."
-                : "Gateway URL must use http or https.";
+                : "Control UI URL must use http or https.";
             return false;
         }
 

@@ -39,6 +39,7 @@ public sealed partial class MainWindow : Window
     private bool _isWindowActive = true;
     private bool _pendingWebViewRecreation;
     private readonly DispatcherQueueTimer _runIndicatorTimer;
+    private bool _isWindowHidden;
 
     public MainViewModel ViewModel { get; } = new();
 
@@ -75,6 +76,10 @@ public sealed partial class MainWindow : Window
         this.Closed += OnWindowClosed;
         this.Activated += OnWindowActivated;
 
+        // Track window visibility for background resume
+        // Note: AppWindow doesn't have Activated/Deactivated events,
+        // so we use the Window.Activated event above for visibility tracking
+
         // Apply saved theme after content is loaded
         if (this.Content is FrameworkElement rootElement)
         {
@@ -93,8 +98,6 @@ public sealed partial class MainWindow : Window
             };
         }
 
-        // Set initial status dot color
-        UpdateStatusDotColor(ConnectionState.Offline);
         UpdateThemeSelector(App.Configuration.Settings.AppTheme);
     }
 
@@ -149,6 +152,13 @@ public sealed partial class MainWindow : Window
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {
         _runIndicatorTimer.Stop();
+        _runIndicatorTimer.Tick -= OnRunIndicatorTick;
+        ViewModel.OpenSettingsRequested -= OnOpenSettingsRequested;
+        ViewModel.WebViewRecreationRequested -= OnWebViewRecreationRequested;
+        ViewModel.ViewLogsRequested -= OnViewLogsRequested;
+        ViewModel.ErrorOccurred -= OnError;
+        ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        ViewModel.Dispose();
         SaveWindowBounds();
         App.Logger.Info("Application closing.");
     }
@@ -160,6 +170,25 @@ public sealed partial class MainWindow : Window
         if (this.Content is FrameworkElement rootElement)
         {
             UpdateTitleBarColors(rootElement.ActualTheme);
+        }
+
+        // Only treat true minimization as "hidden" for recovery purposes.
+        var isMinimized = IsWindowMinimized();
+        if (_isWindowActive)
+        {
+            if (_isWindowHidden && !isMinimized)
+            {
+                _isWindowHidden = false;
+                OnWindowVisibleAsync();
+            }
+        }
+        else if (isMinimized)
+        {
+            if (!_isWindowHidden)
+            {
+                _isWindowHidden = true;
+                OnWindowHidden();
+            }
         }
 
         if (_hasPerformedInitialTitleBarRefresh || !_isWindowActive)
@@ -177,6 +206,18 @@ public sealed partial class MainWindow : Window
                 RefreshTitleBarVisualState();
             });
         });
+    }
+
+    private void OnWindowHidden()
+    {
+        // Notify coordinator for background resume tracking
+        ViewModel.NotifyHostHidden();
+    }
+
+    private async void OnWindowVisibleAsync()
+    {
+        // Notify coordinator for background resume recovery
+        await ViewModel.NotifyHostVisibleAsync();
     }
 
     private SettingsDialog? _settingsWindow;
@@ -254,12 +295,6 @@ public sealed partial class MainWindow : Window
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainViewModel.ConnectionState))
-        {
-            UpdateStatusDotColor(ViewModel.ConnectionState);
-            return;
-        }
-
         if (e.PropertyName == nameof(MainViewModel.IsRunIndicatorsAnimating))
         {
             UpdateRunIndicatorAnimationState();
@@ -287,25 +322,6 @@ public sealed partial class MainWindow : Window
     private void OnRunIndicatorTick(DispatcherQueueTimer sender, object args)
     {
         ViewModel.AdvanceRunIndicators();
-    }
-
-    private void UpdateStatusDotColor(ConnectionState state)
-    {
-        DispatcherQueue.TryEnqueue(() =>
-        {
-            var brushKey = state switch
-            {
-                ConnectionState.Connected => "StatusConnectedBrush",
-                ConnectionState.Loading or ConnectionState.GatewayConnecting or ConnectionState.Reconnecting => "StatusReconnectingBrush",
-                ConnectionState.AuthFailed or ConnectionState.Error => "StatusErrorBrush",
-                _ => "StatusOfflineBrush",
-            };
-
-            if (Application.Current.Resources.TryGetValue(brushKey, out var brush))
-            {
-                StatusDot.Fill = (SolidColorBrush)brush;
-            }
-        });
     }
 
     private async void OnAboutClick(object sender, RoutedEventArgs e)
@@ -551,6 +567,12 @@ public sealed partial class MainWindow : Window
         return (uint)(color.R | (color.G << 8) | (color.B << 16));
     }
 
+    private bool IsWindowMinimized()
+    {
+        var hwnd = WindowNative.GetWindowHandle(this);
+        return hwnd != IntPtr.Zero && IsIconic(hwnd);
+    }
+
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(
         IntPtr hwnd,
@@ -575,4 +597,8 @@ public sealed partial class MainWindow : Window
         int cx,
         int cy,
         uint uFlags);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsIconic(IntPtr hWnd);
 }

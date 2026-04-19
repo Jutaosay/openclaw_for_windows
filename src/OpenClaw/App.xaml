@@ -16,6 +16,9 @@
             <SolidColorBrush x:Key="StatusErrorBrush" Color="#FFEF4444" />
             <SolidColorBrush x:Key="StatusOfflineBrush" Color="#FF6B7280" />
 
+            <!-- Success/Accent colors -->
+            <SolidColorBrush x:Key="SuccessBrush" Color="#FF22C55E" />
+
             <!-- Subtle button style: transparent background, shows hover/press states -->
             <Style x:Key="SubtleButtonStyle" TargetType="Button">
                 <Setter Property="Background" Value="Transparent" />
