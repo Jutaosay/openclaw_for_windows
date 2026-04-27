@@ -1,8 +1,10 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using System.Text.Json;
+using System.Runtime.InteropServices;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
+using OpenClaw.Helpers;
 using OpenClaw.Services;
 
 namespace OpenClaw.Services;
@@ -13,11 +15,85 @@ namespace OpenClaw.Services;
 /// </summary>
 public sealed class HostedUiBridge
 {
-    private const string BridgeScriptResource = """
+    private static string? _bridgeScriptResource;
+
+    private static string BridgeScriptResource => _bridgeScriptResource ??= BuildBridgeScript();
+
+    private static string BuildBridgeScript()
+    {
+        var strings = new Dictionary<string, string>
+        {
+            ["bridgeGatewayUiLoaded"] = JsString(StringResources.BridgeGatewayUiLoaded),
+            ["bridgePageLoading"] = JsString(StringResources.BridgePageLoading),
+            ["bridgeTokenMissingSummary"] = JsString(StringResources.BridgeTokenMissingSummary),
+            ["bridgeTokenMissingDetail"] = JsString(StringResources.BridgeTokenMissingDetail),
+            ["bridgeTokenMismatchSummary"] = JsString(StringResources.BridgeTokenMismatchSummary),
+            ["bridgeTokenMismatchDetail"] = JsString(StringResources.BridgeTokenMismatchDetail),
+            ["bridgeDeviceTokenMismatchSummary"] = JsString(StringResources.BridgeDeviceTokenMismatchSummary),
+            ["bridgeDeviceTokenMismatchDetail"] = JsString(StringResources.BridgeDeviceTokenMismatchDetail),
+            ["bridgeOriginRejectedSummary"] = JsString(StringResources.BridgeOriginRejectedSummary),
+            ["bridgeOriginRejectedDetail"] = JsString(StringResources.BridgeOriginRejectedDetail),
+            ["bridgeTrustedProxyLoopbackSummary"] = JsString(StringResources.BridgeTrustedProxyLoopbackSummary),
+            ["bridgeTrustedProxyLoopbackDetail"] = JsString(StringResources.BridgeTrustedProxyLoopbackDetail),
+            ["bridgeMixedAuthSummary"] = JsString(StringResources.BridgeMixedAuthSummary),
+            ["bridgeMixedAuthDetail"] = JsString(StringResources.BridgeMixedAuthDetail),
+            ["bridgeTrustedProxyHeaderSummary"] = JsString(StringResources.BridgeTrustedProxyHeaderSummary),
+            ["bridgeTrustedProxyHeaderDetail"] = JsString(StringResources.BridgeTrustedProxyHeaderDetail),
+            ["bridgeTrustedProxyOriginSummary"] = JsString(StringResources.BridgeTrustedProxyOriginSummary),
+            ["bridgeTrustedProxyOriginDetail"] = JsString(StringResources.BridgeTrustedProxyOriginDetail),
+            ["bridgeRateLimitedSummary"] = JsString(StringResources.BridgeRateLimitedSummary),
+            ["bridgeRateLimitedDetail"] = JsString(StringResources.BridgeRateLimitedDetail),
+            ["bridgeInsecureHttpSummary"] = JsString(StringResources.BridgeInsecureHttpSummary),
+            ["bridgeInsecureHttpDetail"] = JsString(StringResources.BridgeInsecureHttpDetail),
+            ["bridgePairingSummary"] = JsString(StringResources.BridgePairingSummary),
+            ["bridgePairingDetail"] = JsString(StringResources.BridgePairingDetail),
+            ["bridgeAuthRequiredSummary"] = JsString(StringResources.BridgeAuthRequiredSummary),
+            ["bridgeAuthRequiredDetail"] = JsString(StringResources.BridgeAuthRequiredDetail),
+            ["bridgeGatewaySessionNotConnectedSummary"] = JsString(StringResources.BridgeGatewaySessionNotConnectedSummary),
+            ["bridgeGatewaySessionNotConnectedDetail"] = JsString(StringResources.BridgeGatewaySessionNotConnectedDetail),
+            ["bridgeConnectingSummary"] = JsString(StringResources.BridgeConnectingSummary),
+            ["bridgeConnectingDetail"] = JsString(StringResources.BridgeConnectingDetail),
+            ["bridgeConnectedSummary"] = JsString(StringResources.BridgeConnectedSummary),
+        };
+
+        return $$"""
 (() => {
   const KIND = 'openclaw-control-ui-status';
   const SESSION_READY_KIND = 'openclaw-session-ready';
   const GAP_KIND = 'openclaw-event-gap';
+  const STRINGS = {
+    bridgeGatewayUiLoaded: '{{strings["bridgeGatewayUiLoaded"]}}',
+    bridgePageLoading: '{{strings["bridgePageLoading"]}}',
+    bridgeTokenMissingSummary: '{{strings["bridgeTokenMissingSummary"]}}',
+    bridgeTokenMissingDetail: '{{strings["bridgeTokenMissingDetail"]}}',
+    bridgeTokenMismatchSummary: '{{strings["bridgeTokenMismatchSummary"]}}',
+    bridgeTokenMismatchDetail: '{{strings["bridgeTokenMismatchDetail"]}}',
+    bridgeDeviceTokenMismatchSummary: '{{strings["bridgeDeviceTokenMismatchSummary"]}}',
+    bridgeDeviceTokenMismatchDetail: '{{strings["bridgeDeviceTokenMismatchDetail"]}}',
+    bridgeOriginRejectedSummary: '{{strings["bridgeOriginRejectedSummary"]}}',
+    bridgeOriginRejectedDetail: '{{strings["bridgeOriginRejectedDetail"]}}',
+    bridgeTrustedProxyLoopbackSummary: '{{strings["bridgeTrustedProxyLoopbackSummary"]}}',
+    bridgeTrustedProxyLoopbackDetail: '{{strings["bridgeTrustedProxyLoopbackDetail"]}}',
+    bridgeMixedAuthSummary: '{{strings["bridgeMixedAuthSummary"]}}',
+    bridgeMixedAuthDetail: '{{strings["bridgeMixedAuthDetail"]}}',
+    bridgeTrustedProxyHeaderSummary: '{{strings["bridgeTrustedProxyHeaderSummary"]}}',
+    bridgeTrustedProxyHeaderDetail: '{{strings["bridgeTrustedProxyHeaderDetail"]}}',
+    bridgeTrustedProxyOriginSummary: '{{strings["bridgeTrustedProxyOriginSummary"]}}',
+    bridgeTrustedProxyOriginDetail: '{{strings["bridgeTrustedProxyOriginDetail"]}}',
+    bridgeRateLimitedSummary: '{{strings["bridgeRateLimitedSummary"]}}',
+    bridgeRateLimitedDetail: '{{strings["bridgeRateLimitedDetail"]}}',
+    bridgeInsecureHttpSummary: '{{strings["bridgeInsecureHttpSummary"]}}',
+    bridgeInsecureHttpDetail: '{{strings["bridgeInsecureHttpDetail"]}}',
+    bridgePairingSummary: '{{strings["bridgePairingSummary"]}}',
+    bridgePairingDetail: '{{strings["bridgePairingDetail"]}}',
+    bridgeAuthRequiredSummary: '{{strings["bridgeAuthRequiredSummary"]}}',
+    bridgeAuthRequiredDetail: '{{strings["bridgeAuthRequiredDetail"]}}',
+    bridgeGatewaySessionNotConnectedSummary: '{{strings["bridgeGatewaySessionNotConnectedSummary"]}}',
+    bridgeGatewaySessionNotConnectedDetail: '{{strings["bridgeGatewaySessionNotConnectedDetail"]}}',
+    bridgeConnectingSummary: '{{strings["bridgeConnectingSummary"]}}',
+    bridgeConnectingDetail: '{{strings["bridgeConnectingDetail"]}}',
+    bridgeConnectedSummary: '{{strings["bridgeConnectedSummary"]}}'
+  };
 
   const isVisible = (el) => {
     if (!el) return false;
@@ -61,9 +137,9 @@ public sealed class HostedUiBridge
     const selectors = [
       '[role="alert"]', '[role="status"]', '[aria-live]',
       '[data-status]', '[data-state]', '[data-busy]',
-      '[class*="auth"]', '[class*="login"]', '[class*="error"]',
-      '[class*="warning"]', '[class*="notice"]', '[class*="pair"]',
-      '[class*="origin"]', 'dialog', 'form', 'h1', 'h2'
+      '[class*="auth"]', '[class*="login"]', '[class*="signin"]',
+      '[class*="error"]', '[class*="pair"]', '[class*="origin"]',
+      '[class*="proxy"]', '[class*="connect"]', '[class*="disconnect"]'
     ];
     const fragments = [];
     const seen = new Set();
@@ -79,9 +155,9 @@ public sealed class HostedUiBridge
         seen.add(normalized);
         fragments.push(normalized);
         totalLength += normalized.length;
-        if (fragments.length >= 10 || totalLength >= 1800) break;
+        if (fragments.length >= 6 || totalLength >= 900) break;
       }
-      if (fragments.length >= 10 || totalLength >= 1800) break;
+      if (fragments.length >= 6 || totalLength >= 900) break;
     }
 
     return fragments.join(' ');
@@ -193,6 +269,17 @@ public sealed class HostedUiBridge
       'access denied', 'token required', 'password required',
       'session expired', 'sign in', 'log in', 'login required'
     ]);
+    const tokenMissingMatch = matchAny(text, [
+      'auth_token_missing', 'token missing', 'missing shared token'
+    ]);
+    const tokenMismatchMatch = matchAny(text, [
+      'auth_token_mismatch', 'token mismatch', 'shared token did not match',
+      'canretrywithdevicetoken'
+    ]);
+    const deviceTokenMismatchMatch = matchAny(text, [
+      'auth_device_token_mismatch', 'device token mismatch',
+      'cached per-device token is stale', 'stale or revoked device token'
+    ]);
     const pairingMatch = matchAny(text, [
       'pairing required', 'pair this device', 'device approval required',
       'device not paired', 'disconnected (1008)'
@@ -201,6 +288,28 @@ public sealed class HostedUiBridge
       'origin not allowed', 'origin rejected', 'allowed origins',
       'forbidden origin', 'trusted proxy'
     ]);
+    const trustedProxyLoopbackMatch = matchAny(text, [
+      'trusted_proxy_loopback_source', 'loopback-source trusted-proxy',
+      'same-host loopback reverse proxies do not satisfy trusted-proxy auth',
+      'same-host loopback reverse proxy', 'trusted-proxy auth rejects loopback-source requests'
+    ]);
+    const mixedTrustedProxyTokenMatch = matchAny(text, [
+      'mixed_trusted_proxy_token', 'mixed token config',
+      'both a gateway.auth.token', 'trusted-proxy mode are active at the same time',
+      'remove the shared token when using trusted-proxy mode'
+    ]);
+    const trustedProxyIdentityHeaderMatch = matchAny(text, [
+      'trusted_proxy_user_missing', 'trusted_proxy_user_not_allowed',
+      'trustedproxy_missing_header', 'missing_header',
+      'identity headers', 'required header wasn\'t present'
+    ]);
+    const trustedProxyOriginRejectedMatch = matchAny(text, [
+      'trusted_proxy_origin_not_allowed', 'origin did not pass control ui origin checks'
+    ]);
+    const rateLimitMatch = matchAny(text, [
+      'retry later', 'too many failed auth attempts', 'retry-after',
+      'rate limited', 'rate limit'
+    ]);
     const gatewayErrorMatch = matchAny(text, [
       'unable to connect', 'connection lost', 'gateway unavailable',
       'failed to connect', 'websocket closed', 'disconnect code'
@@ -208,6 +317,14 @@ public sealed class HostedUiBridge
     const connectingMatch = matchAny(text, [
       'connecting to gateway', 'waiting for gateway',
       'reconnecting', 'establishing connection'
+    ]);
+    const isNonLocalHttp =
+      lowerUrl.startsWith('http://') &&
+      !/\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::|\/|$)/.test(lowerUrl);
+    const insecureHttpMatch = matchAny(text, [
+      'non-secure context', 'webcrypto', 'allowinsecureauth',
+      'dangerouslydisabledeviceauth', 'device identity checks',
+      'use https', 'tailscale serve'
     ]);
 
     const shellDetected =
@@ -227,35 +344,71 @@ public sealed class HostedUiBridge
     const workState = isBusy ? 'busy' : shellDetected ? 'idle' : 'unknown';
 
     let phase = 'page_loaded';
-    let summary = 'Gateway UI loaded.';
+    let summary = STRINGS.bridgeGatewayUiLoaded;
     let detail = '';
 
     if (!document.body || document.readyState === 'loading') {
       phase = 'loading';
-      summary = 'Page is loading.';
+      summary = STRINGS.bridgePageLoading;
+    } else if (tokenMissingMatch) {
+      phase = 'auth_required';
+      summary = STRINGS.bridgeTokenMissingSummary;
+      detail = STRINGS.bridgeTokenMissingDetail;
+    } else if (tokenMismatchMatch) {
+      phase = 'auth_required';
+      summary = STRINGS.bridgeTokenMismatchSummary;
+      detail = STRINGS.bridgeTokenMismatchDetail;
+    } else if (deviceTokenMismatchMatch) {
+      phase = 'auth_required';
+      summary = STRINGS.bridgeDeviceTokenMismatchSummary;
+      detail = STRINGS.bridgeDeviceTokenMismatchDetail;
     } else if (originMatch) {
       phase = 'origin_rejected';
-      summary = 'Gateway rejected this origin.';
-      detail = 'Check gateway.controlUi.allowedOrigins and trusted proxy settings. For Cloudflare Tunnel, the exact public HTTPS origin must be allowed and the original host/scheme must be forwarded.';
+      summary = STRINGS.bridgeOriginRejectedSummary;
+      detail = STRINGS.bridgeOriginRejectedDetail;
+    } else if (trustedProxyLoopbackMatch) {
+      phase = 'auth_required';
+      summary = STRINGS.bridgeTrustedProxyLoopbackSummary;
+      detail = STRINGS.bridgeTrustedProxyLoopbackDetail;
+    } else if (mixedTrustedProxyTokenMatch) {
+      phase = 'auth_required';
+      summary = STRINGS.bridgeMixedAuthSummary;
+      detail = STRINGS.bridgeMixedAuthDetail;
+    } else if (trustedProxyIdentityHeaderMatch) {
+      phase = 'auth_required';
+      summary = STRINGS.bridgeTrustedProxyHeaderSummary;
+      detail = STRINGS.bridgeTrustedProxyHeaderDetail;
+    } else if (trustedProxyOriginRejectedMatch) {
+      phase = 'origin_rejected';
+      summary = STRINGS.bridgeTrustedProxyOriginSummary;
+      detail = STRINGS.bridgeTrustedProxyOriginDetail;
+    } else if (rateLimitMatch) {
+      phase = 'auth_required';
+      summary = STRINGS.bridgeRateLimitedSummary;
+      detail = STRINGS.bridgeRateLimitedDetail;
+    } else if (isNonLocalHttp && insecureHttpMatch) {
+      phase = 'gateway_error';
+      summary = STRINGS.bridgeInsecureHttpSummary;
+      detail = STRINGS.bridgeInsecureHttpDetail;
     } else if (pairingMatch) {
       phase = 'pairing_required';
-      summary = 'Gateway requires device pairing.';
-      detail = 'Approve this device or complete the pairing flow in the hosted UI.';
+      summary = STRINGS.bridgePairingSummary;
+      detail = STRINGS.bridgePairingDetail;
     } else if (authMatch || /\/(login|signin|auth)(\/|$|\?)/.test(lowerUrl)) {
       phase = 'auth_required';
-      summary = 'Gateway authentication is required.';
-      detail = 'Sign in or provide a valid token/password for the remote gateway.';
+      summary = STRINGS.bridgeAuthRequiredSummary;
+      detail = STRINGS.bridgeAuthRequiredDetail;
     } else if (gatewayErrorMatch) {
       phase = 'gateway_error';
-      summary = 'Gateway session is not connected.';
-      detail = 'The page is loaded, but the Control UI still reports a connection problem.';
+      summary = STRINGS.bridgeGatewaySessionNotConnectedSummary;
+      detail = STRINGS.bridgeGatewaySessionNotConnectedDetail;
     } else if (connectingMatch) {
       phase = 'gateway_connecting';
-      summary = 'Connecting to Gateway...';
-      detail = 'The Control UI is loaded and is still establishing its Gateway session.';
+      summary = STRINGS.bridgeConnectingSummary;
+      detail = STRINGS.bridgeConnectingDetail;
     } else if (shellDetected) {
       phase = 'connected';
-      summary = 'Gateway session appears active.';
+      summary = STRINGS.bridgeConnectedSummary;
     }
 
     return {
@@ -322,20 +475,18 @@ public sealed class HostedUiBridge
 
   // Post status
   let lastSerialized = '';
-  const postStatus = () => {
+  const postStatus = (snapshot = inspectControlUi()) => {
     if (!window.chrome?.webview?.postMessage) return;
-    const payload = inspectControlUi();
-    const serialized = JSON.stringify(payload);
+    const serialized = JSON.stringify(snapshot);
     if (serialized === lastSerialized) return;
     lastSerialized = serialized;
-    window.chrome.webview.postMessage(payload);
+    window.chrome.webview.postMessage(snapshot);
   };
 
   // Detect session ready
-  const checkSessionReady = () => {
+  const checkSessionReady = (snapshot = inspectControlUi()) => {
     if (sessionReadyEmitted) return;
 
-    const snapshot = inspectControlUi();
     if (snapshot.phase === 'connected' && snapshot.shellDetected) {
       sessionReadyEmitted = true;
       window.chrome.webview.postMessage({
@@ -384,30 +535,32 @@ public sealed class HostedUiBridge
         const handled = await invokeBridgeMethod(
           ['refreshSession', 'reloadSession', 'reconnect', 'connect', 'resume'],
           payload);
-        postStatus();
-        checkSessionReady();
+        const snapshot = inspectControlUi();
+        postStatus(snapshot);
+        checkSessionReady(snapshot);
         return handled || dispatchBridgeEvent(command, payload);
       }
       case 'fetch_recent_messages': {
         const handled = await invokeBridgeMethod(
           ['fetchRecentMessages', 'loadRecentMessages', 'syncMessages', 'sync'],
           payload);
-        postStatus();
+        postStatus(inspectControlUi());
         return handled || dispatchBridgeEvent(command, payload);
       }
       case 'lightweight_sync': {
         const handled = await invokeBridgeMethod(
           ['sync', 'refresh', 'refreshSession', 'fetchRecentMessages', 'loadRecentMessages'],
           payload);
-        postStatus();
-        checkSessionReady();
+        const snapshot = inspectControlUi();
+        postStatus(snapshot);
+        checkSessionReady(snapshot);
         return handled || dispatchBridgeEvent(command, payload);
       }
       case 'reconnect_intent': {
         const handled = await invokeBridgeMethod(
           ['reconnect', 'connect', 'resume', 'refreshSession'],
           payload);
-        postStatus();
+        postStatus(inspectControlUi());
         return handled || dispatchBridgeEvent(command, payload);
       }
       default:
@@ -446,9 +599,10 @@ public sealed class HostedUiBridge
     if (scheduledPost) return;
     scheduledPost = window.setTimeout(() => {
       scheduledPost = 0;
-      postStatus();
-      checkSessionReady();
-    }, 180);
+      const snapshot = inspectControlUi();
+      postStatus(snapshot);
+      checkSessionReady(snapshot);
+    }, document.visibilityState === 'visible' ? 180 : 1200);
   };
 
   // Observe DOM changes
@@ -478,12 +632,62 @@ public sealed class HostedUiBridge
   window.addEventListener('popstate', schedule);
   window.addEventListener('load', schedule);
   document.addEventListener('readystatechange', schedule);
-  window.setInterval(() => { postStatus(); checkSessionReady(); }, 4000);
+
+  let pollInterval = 8000;
+  let pollTimer = 0;
+  const tick = () => {
+    const snapshot = inspectControlUi();
+    postStatus(snapshot);
+    checkSessionReady(snapshot);
+    pollInterval = snapshot.phase === 'connected' ? 15000 : 4000;
+    pollTimer = window.setTimeout(tick, pollInterval);
+  };
+
+  const restartPolling = (interval = pollInterval) => {
+    if (pollTimer) {
+      window.clearTimeout(pollTimer);
+    }
+
+    pollInterval = interval;
+    pollTimer = window.setTimeout(tick, pollInterval);
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      schedule();
+      restartPolling(1200);
+      return;
+    }
+
+    restartPolling(15000);
+  });
+
+  window.addEventListener('focus', () => {
+    schedule();
+    restartPolling(1200);
+  });
+
+  window.addEventListener('blur', () => {
+    restartPolling(12000);
+  });
+
+  restartPolling();
   schedule();
 })();
 """;
+    }
+
+    private static string JsString(string value)
+    {
+        return value
+            .Replace("\\", "\\\\")
+            .Replace("'", "\\'")
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n");
+    }
 
     private WebView2? _webView;
+    private CoreWebView2? _coreWebView;
     private bool _isInitialized;
 
     /// <summary>
@@ -521,20 +725,30 @@ public sealed class HostedUiBridge
     /// </summary>
     public async Task InitializeAsync(WebView2 webView)
     {
-        if (_webView?.CoreWebView2 is not null)
+        var previousCoreWebView = GetCoreWebView();
+        if (previousCoreWebView is not null)
         {
-            _webView.CoreWebView2.WebMessageReceived -= OnWebMessageReceived;
+            previousCoreWebView.WebMessageReceived -= OnWebMessageReceived;
         }
 
         _webView = webView;
+        _coreWebView = null;
         LastKnownEventSeq = null;
         LastKnownStateVersion = null;
         IsSessionReadyEmitted = false;
 
         try
         {
-            await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(BridgeScriptResource);
-            _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
+            var coreWebView = TryGetCoreWebView2(_webView);
+            if (coreWebView is null)
+            {
+                throw new InvalidOperationException("Bridge cannot initialize before CoreWebView2 is available.");
+            }
+
+            _coreWebView = coreWebView;
+
+            await coreWebView.AddScriptToExecuteOnDocumentCreatedAsync(BridgeScriptResource);
+            coreWebView.WebMessageReceived += OnWebMessageReceived;
             _isInitialized = true;
             App.Logger.Info("HostedUiBridge initialized.");
         }
@@ -550,16 +764,26 @@ public sealed class HostedUiBridge
     /// </summary>
     public async Task<bool> SendCommandAsync(string command, object? payload = null)
     {
-        if (_webView?.CoreWebView2 is null)
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is null)
         {
-            throw new InvalidOperationException("Bridge not initialized.");
+            App.Logger.Warning($"HostedUiBridge command skipped before initialization: {command}");
+            return false;
         }
 
-        var message = new { kind = "command", command, payload };
-        var json = JsonSerializer.Serialize(message);
-        var script = $"(async () => await window.__openClawHostBridge?.onCommand?.({json}) ?? false)()";
-        var raw = await _webView.CoreWebView2.ExecuteScriptAsync(script);
-        return bool.TryParse(raw?.Trim('"'), out var handled) && handled;
+        try
+        {
+            var message = new { kind = "command", command, payload };
+            var json = JsonSerializer.Serialize(message);
+            var script = $"(async () => await window.__openClawHostBridge?.onCommand?.({json}) ?? false)()";
+            var raw = await coreWebView.ExecuteScriptAsync(script);
+            return bool.TryParse(raw?.Trim('"'), out var handled) && handled;
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException)
+        {
+            App.Logger.Warning($"HostedUiBridge command '{command}' failed while WebView2 was unavailable: {ex.Message}");
+            return false;
+        }
     }
 
     /// <summary>
@@ -656,15 +880,45 @@ public sealed class HostedUiBridge
     /// </summary>
     public void Dispose()
     {
-        if (_webView?.CoreWebView2 is not null)
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is not null)
         {
-            _webView.CoreWebView2.WebMessageReceived -= OnWebMessageReceived;
+            coreWebView.WebMessageReceived -= OnWebMessageReceived;
         }
         _webView = null;
+        _coreWebView = null;
         _isInitialized = false;
         LastKnownEventSeq = null;
         LastKnownStateVersion = null;
         IsSessionReadyEmitted = false;
+    }
+
+    private static CoreWebView2? TryGetCoreWebView2(WebView2? webView)
+    {
+        if (webView is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return webView.CoreWebView2;
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private CoreWebView2? GetCoreWebView()
+    {
+        if (_coreWebView is not null)
+        {
+            return _coreWebView;
+        }
+
+        _coreWebView = TryGetCoreWebView2(_webView);
+        return _coreWebView;
     }
 }
 

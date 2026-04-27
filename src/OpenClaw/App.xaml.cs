@@ -12,6 +12,12 @@ public partial class App : Application
 {
     private Window? _mainWindow;
 
+    static App()
+    {
+        OpenClaw.Services.AppTelemetry.DeferredSaveRequestsProvider = () => Configuration.DeferredSaveRequests;
+        OpenClaw.Services.AppTelemetry.DeferredSaveCoalescedRequestsProvider = () => Configuration.DeferredSaveCoalescedRequests;
+    }
+
     public App()
     {
         this.InitializeComponent();
@@ -41,8 +47,11 @@ public partial class App : Application
 
         // Apply saved language preference
         ApplyLanguage(Configuration.Settings.AppLanguage);
+        Logger.Info("Language applied.");
 
+        Logger.Info("Creating main window.");
         _mainWindow = new MainWindow();
+        Logger.Info("Main window created.");
         MainWindow = _mainWindow;
         _mainWindow.Activate();
 

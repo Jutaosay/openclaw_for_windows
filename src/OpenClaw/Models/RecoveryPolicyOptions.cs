@@ -51,9 +51,9 @@ public class RecoveryPolicyOptions
 
     /// <summary>
     /// Gets or sets the delay before first reconnect attempt (milliseconds).
-    /// Default is 500ms.
+    /// Default is 1200ms.
     /// </summary>
-    public int ReconnectDelayMs { get; set; } = 500;
+    public int ReconnectDelayMs { get; set; } = 1200;
 
     /// <summary>
     /// Gets or sets the backoff multiplier for reconnect attempts.
@@ -64,16 +64,16 @@ public class RecoveryPolicyOptions
 
     /// <summary>
     /// Gets or sets the maximum reconnect delay (milliseconds).
-    /// Default is 30000ms (30 seconds).
+    /// Default is 45000ms (45 seconds).
     /// </summary>
-    public int MaxReconnectDelayMs { get; set; } = 30000;
+    public int MaxReconnectDelayMs { get; set; } = 45000;
 
     /// <summary>
     /// Gets or sets the minimum time between hard refresh attempts (seconds).
     /// Prevents refresh thrashing.
-    /// Default is 45 seconds.
+    /// Default is 75 seconds.
     /// </summary>
-    public int HardRefreshCooldownSeconds { get; set; } = 45;
+    public int HardRefreshCooldownSeconds { get; set; } = 75;
 }
 
 /// <summary>
@@ -90,21 +90,21 @@ public class HeartbeatOptions
     /// <summary>
     /// Gets or sets the heartbeat probe interval in seconds.
     /// 0 disables heartbeat.
-    /// Default is 30s.
+    /// Default is 45s.
     /// </summary>
-    public int IntervalSeconds { get; set; } = 30;
+    public int IntervalSeconds { get; set; } = 45;
 
     /// <summary>
     /// Gets or sets the number of consecutive heartbeat failures before triggering recovery.
-    /// Default is 3.
+    /// Default is 2.
     /// </summary>
-    public int FailureThreshold { get; set; } = 3;
+    public int FailureThreshold { get; set; } = 2;
 
     /// <summary>
     /// Gets or sets the number of consecutive "connecting" states before triggering recovery.
-    /// Default is 3.
+    /// Default is 4.
     /// </summary>
-    public int ConnectingThreshold { get; set; } = 3;
+    public int ConnectingThreshold { get; set; } = 4;
 }
 
 /// <summary>

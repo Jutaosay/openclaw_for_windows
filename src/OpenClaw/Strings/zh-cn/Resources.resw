@@ -40,7 +40,6 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 
-  <!-- Top Bar -->
   <data name="Reload" xml:space="preserve">
     <value>刷新</value>
   </data>
@@ -56,8 +55,37 @@
   <data name="ClearSession" xml:space="preserve">
     <value>清除会话</value>
   </data>
+  <data name="Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>重试</value>
+  </data>
+  <data name="DevTools" xml:space="preserve">
+    <value>开发者工具</value>
+  </data>
+  <data name="DiagnosticsTitle" xml:space="preserve">
+    <value>诊断</value>
+  </data>
+  <data name="SelectEnvironment" xml:space="preserve">
+    <value>选择环境</value>
+  </data>
+  <data name="MainModelLabel" xml:space="preserve">
+    <value>模型：</value>
+  </data>
+  <data name="MainStatusLabel" xml:space="preserve">
+    <value>状态：</value>
+  </data>
+  <data name="ThemeSystem" xml:space="preserve">
+    <value>系统主题</value>
+  </data>
+  <data name="ThemeLight" xml:space="preserve">
+    <value>浅色主题</value>
+  </data>
+  <data name="ThemeDark" xml:space="preserve">
+    <value>深色主题</value>
+  </data>
 
-  <!-- Status Bar -->
   <data name="StatusConnected" xml:space="preserve">
     <value>已连接</value>
   </data>
@@ -79,8 +107,41 @@
   <data name="StatusOffline" xml:space="preserve">
     <value>离线</value>
   </data>
+  <data name="StatusHeartbeatFailed" xml:space="preserve">
+    <value>网关心跳丢失，正在刷新...</value>
+  </data>
+  <data name="HeartbeatOk" xml:space="preserve">
+    <value>心跳正常</value>
+  </data>
+  <data name="HeartbeatWait" xml:space="preserve">
+    <value>心跳等待</value>
+  </data>
+  <data name="HeartbeatBlocked" xml:space="preserve">
+    <value>心跳阻塞</value>
+  </data>
+  <data name="HeartbeatFailed" xml:space="preserve">
+    <value>心跳失败</value>
+  </data>
 
-  <!-- Settings Dialog -->
+  <data name="RecoveryConnecting" xml:space="preserve">
+    <value>连接中...</value>
+  </data>
+  <data name="RecoveryReconnecting" xml:space="preserve">
+    <value>重新连接中...</value>
+  </data>
+  <data name="RecoveryResyncing" xml:space="preserve">
+    <value>同步会话中...</value>
+  </data>
+  <data name="RecoveryRefreshing" xml:space="preserve">
+    <value>刷新页面中...</value>
+  </data>
+  <data name="RecoveryDegraded" xml:space="preserve">
+    <value>连接质量下降</value>
+  </data>
+  <data name="RecoveryFailed" xml:space="preserve">
+    <value>恢复失败，需要手动操作</value>
+  </data>
+
   <data name="SettingsTitle" xml:space="preserve">
     <value>设置</value>
   </data>
@@ -108,13 +169,140 @@
   <data name="NoEnvironments" xml:space="preserve">
     <value>尚未配置环境，请添加一个以开始使用。</value>
   </data>
+  <data name="SettingsNavLanguage" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="SettingsNavEnvironments" xml:space="preserve">
+    <value>环境</value>
+  </data>
+  <data name="SettingsNavSessions" xml:space="preserve">
+    <value>会话</value>
+  </data>
+  <data name="SettingsNavDevTools" xml:space="preserve">
+    <value>开发工具</value>
+  </data>
+  <data name="SettingsLanguageDescription" xml:space="preserve">
+    <value>选择你偏好的显示语言。</value>
+  </data>
+  <data name="SettingsLanguageSystem" xml:space="preserve">
+    <value>系统默认</value>
+  </data>
+  <data name="SettingsLanguageEnglish" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="SettingsLanguageChineseSimplified" xml:space="preserve">
+    <value>中文（简体）</value>
+  </data>
+  <data name="SettingsLanguageRestartHint" xml:space="preserve">
+    <value>* 语言切换需重启应用。</value>
+  </data>
+  <data name="SettingsEnvironmentsTitle" xml:space="preserve">
+    <value>网关环境</value>
+  </data>
+  <data name="SettingsEnvironmentsDescription" xml:space="preserve">
+    <value>管理你的 OpenClaw Control UI 入口。</value>
+  </data>
+  <data name="SettingsAddTooltip" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="SettingsRemoveTooltip" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="SettingsEnvironmentPlaceholder" xml:space="preserve">
+    <value>例如：Production</value>
+  </data>
+  <data name="SettingsControlUiUrl" xml:space="preserve">
+    <value>Control UI URL</value>
+  </data>
+  <data name="SettingsControlUiUrlHint1" xml:space="preserve">
+    <value>请填写公开托管的 Control UI 页面地址（`http://` 或 `https://`），不要填写 Gateway WebSocket URL。如果你通过 Cloudflare Tunnel 或其他反向代理访问，这里应当是浏览器最终访问的公网 origin。</value>
+  </data>
+  <data name="SettingsControlUiUrlHint2" xml:space="preserve">
+    <value>如果页面能打开，但 OpenClaw 报告 origin rejection，请把这个精确 origin 加入 `gateway.controlUi.allowedOrigins`，并确认反向代理 / Cloudflare Tunnel 保留了原始 host 和 scheme。</value>
+  </data>
+  <data name="SettingsControlUiUrlHint3" xml:space="preserve">
+    <value>对于同机 VPS 反向代理或 Cloudflare Tunnel sidecar，当前 OpenClaw 文档更推荐 `gateway.auth.mode: "token"` 或 `"password"`，而不是 `"trusted-proxy"`。同机 loopback 转发不满足 trusted-proxy 验证。</value>
+  </data>
+  <data name="SettingsControlUiUrlHint4" xml:space="preserve">
+    <value>如果 OpenClaw 要求设备配对，请在网关主机上执行 `openclaw devices list` 和 `openclaw devices approve --latest`，然后再回到这个桌面客户端重连。</value>
+  </data>
+  <data name="SettingsApply" xml:space="preserve">
+    <value>应用</value>
+  </data>
+  <data name="SettingsValidationError" xml:space="preserve">
+    <value>校验错误</value>
+  </data>
+  <data name="SettingsSessionsTitle" xml:space="preserve">
+    <value>环境会话</value>
+  </data>
+  <data name="SettingsSessionsDescription" xml:space="preserve">
+    <value>每个环境都会使用独立的 WebView2Data 配置文件。请只清除你想重置的那个环境。</value>
+  </data>
+  <data name="SettingsSessionReset" xml:space="preserve">
+    <value>会话重置</value>
+  </data>
+  <data name="SettingsClearSessionAction" xml:space="preserve">
+    <value>清除会话</value>
+  </data>
+  <data name="SettingsDevToolsTitle" xml:space="preserve">
+    <value>开发工具</value>
+  </data>
+  <data name="SettingsDevToolsDescription" xml:space="preserve">
+    <value>诊断与调试工具。</value>
+  </data>
+  <data name="SettingsEnableDevLog" xml:space="preserve">
+    <value>启用开发日志</value>
+  </data>
+  <data name="SettingsEnableDevLogDescription" xml:space="preserve">
+    <value>启用后，应用会把详细的恢复遥测和内部诊断信息写入日志文件。</value>
+  </data>
+  <data name="SettingsRunDiagnostics" xml:space="preserve">
+    <value>运行诊断</value>
+  </data>
+  <data name="SettingsViewLogs" xml:space="preserve">
+    <value>查看日志</value>
+  </data>
+  <data name="SettingsOpenDevTools" xml:space="preserve">
+    <value>打开 DevTools</value>
+  </data>
+  <data name="SettingsSessionResetSelectEnvironment" xml:space="preserve">
+    <value>请选择要清除会话的环境。</value>
+  </data>
+  <data name="SettingsSessionResetCompleted" xml:space="preserve">
+    <value>已清除“{0}”的保存会话。</value>
+  </data>
+  <data name="SettingsValidationDefaultMessage" xml:space="preserve">
+    <value>所有环境都必须具有唯一名称和有效的 http(s) Control UI URL。对于 Cloudflare Tunnel 或反向代理部署，请使用公开的 HTTPS Control UI URL，并确保 `gateway.controlUi.allowedOrigins` 与其精确 origin 保持一致。</value>
+  </data>
+  <data name="SettingsValidationSelectEnvironment" xml:space="preserve">
+    <value>请先选择一个环境。</value>
+  </data>
+  <data name="SettingsValidationDuplicateEnvironment" xml:space="preserve">
+    <value>环境名称“{0}”重复。当前会话隔离依赖环境名称，因此每个环境名称都必须唯一。</value>
+  </data>
+  <data name="SettingsValidationEnvironmentNameRequired" xml:space="preserve">
+    <value>环境名称不能为空。</value>
+  </data>
+  <data name="SettingsValidationControlUiUrlRequired" xml:space="preserve">
+    <value>Control UI URL 不能为空。</value>
+  </data>
+  <data name="SettingsValidationControlUiUrlAbsolute" xml:space="preserve">
+    <value>Control UI URL 必须是绝对地址。</value>
+  </data>
+  <data name="SettingsValidationControlUiUrlWs" xml:space="preserve">
+    <value>这里应填写 Control UI 页面地址（http/https），而不是 Gateway WebSocket 地址（ws/wss）。</value>
+  </data>
+  <data name="SettingsValidationControlUiUrlScheme" xml:space="preserve">
+    <value>Control UI URL 必须使用 http 或 https。</value>
+  </data>
+  <data name="SettingsGeneratedEnvironmentName" xml:space="preserve">
+    <value>环境 {0}</value>
+  </data>
 
-  <!-- App -->
   <data name="AppDisplayName" xml:space="preserve">
     <value>OpenClaw 管理器</value>
   </data>
 
-  <!-- Quick Commands -->
   <data name="QuickCommands" xml:space="preserve">
     <value>快捷命令</value>
   </data>
@@ -131,52 +319,285 @@
     <value>/queue - 队列中断</value>
   </data>
 
-  <!-- InfoBar and Retry -->
   <data name="ConnectionIssue" xml:space="preserve">
     <value>连接问题</value>
   </data>
-  <data name="Retry" xml:space="preserve">
-    <value>重试</value>
+  <data name="AboutTitle" xml:space="preserve">
+    <value>关于</value>
   </data>
-  <data name="DevTools" xml:space="preserve">
-    <value>开发者工具</value>
+  <data name="AboutDescription" xml:space="preserve">
+    <value>基于 WinUI 3 与 WebView2 的 OpenClaw Gateway 原生 Windows 管理外壳。</value>
   </data>
-
-  <!-- 心跳检测 -->
-  <data name="StatusHeartbeatFailed" xml:space="preserve">
-    <value>心跳丢失，正在重连...</value>
+  <data name="AboutRepository" xml:space="preserve">
+    <value>GitHub 仓库</value>
   </data>
-  <data name="HeartbeatOk" xml:space="preserve">
-    <value>心跳正常</value>
+  <data name="AboutDevelopedBy" xml:space="preserve">
+    <value>开发者：</value>
   </data>
-  <data name="HeartbeatWait" xml:space="preserve">
-    <value>心跳等待</value>
+  <data name="AboutCopyright" xml:space="preserve">
+    <value>(C) 2026 Lanstack @openclaw. 保留所有权利。</value>
   </data>
-  <data name="HeartbeatBlocked" xml:space="preserve">
-    <value>心跳阻塞</value>
+  <data name="LogsTitle" xml:space="preserve">
+    <value>应用日志</value>
   </data>
-  <data name="HeartbeatFailed" xml:space="preserve">
-    <value>心跳失败</value>
+  <data name="RefreshLogs" xml:space="preserve">
+    <value>刷新日志</value>
   </data>
-
-  <!-- Phase 2 - Recovery States -->
-  <data name="RecoveryConnecting" xml:space="preserve">
-    <value>连接中...</value>
+  <data name="OpenLogFolder" xml:space="preserve">
+    <value>打开日志目录</value>
   </data>
-  <data name="RecoveryReconnecting" xml:space="preserve">
-    <value>重新连接中...</value>
+  <data name="LogFileLabelFormat" xml:space="preserve">
+    <value>日志：{0}</value>
   </data>
-  <data name="RecoveryResyncing" xml:space="preserve">
-    <value>同步会话中...</value>
+  <data name="LogShowingLastLinesFormat" xml:space="preserve">
+    <value>（显示最后 500 行，共 {0} 行）</value>
   </data>
-  <data name="RecoveryRefreshing" xml:space="preserve">
-    <value>刷新页面中...</value>
+  <data name="LogNotFoundToday" xml:space="preserve">
+    <value>今天没有找到日志文件。</value>
   </data>
-  <data name="RecoveryDegraded" xml:space="preserve">
-    <value>连接质量下降</value>
-  </data>
-  <data name="RecoveryFailed" xml:space="preserve">
-    <value>恢复失败，需要手动操作</value>
+  <data name="LogReadFailedFormat" xml:space="preserve">
+    <value>读取日志失败：{0}</value>
   </data>
 
+  <data name="DiagnosticWebView2RuntimeLabel" xml:space="preserve">
+    <value>WebView2 运行时</value>
+  </data>
+  <data name="DiagnosticNetworkConnectivityLabel" xml:space="preserve">
+    <value>网络连接</value>
+  </data>
+  <data name="DiagnosticSessionStatusLabel" xml:space="preserve">
+    <value>会话状态</value>
+  </data>
+  <data name="DiagnosticInstrumentationLabel" xml:space="preserve">
+    <value>运行时观测</value>
+  </data>
+  <data name="DiagnosticWebViewRuntimeNotFound" xml:space="preserve">
+    <value>未找到 WebView2 运行时</value>
+  </data>
+  <data name="DiagnosticWebViewRuntimeNotFoundDetail" xml:space="preserve">
+    <value>请从 https://developer.microsoft.com/en-us/microsoft-edge/webview2/ 安装 WebView2 Evergreen Runtime。</value>
+  </data>
+  <data name="DiagnosticWebViewRuntimeCheckFailed" xml:space="preserve">
+    <value>WebView2 运行时检查失败</value>
+  </data>
+  <data name="DiagnosticWebViewRuntimeCheckFailedDetailFormat" xml:space="preserve">
+    <value>错误：{0}。请安装 WebView2 Evergreen Runtime。</value>
+  </data>
+  <data name="DiagnosticNoGatewayUrlConfigured" xml:space="preserve">
+    <value>尚未配置网关 URL。</value>
+  </data>
+  <data name="DiagnosticNonLocalHttp" xml:space="preserve">
+    <value>Control UI 配置为非本地 HTTP。</value>
+  </data>
+  <data name="DiagnosticNonLocalHttpDetail" xml:space="preserve">
+    <value>当前 OpenClaw 文档建议远程浏览器访问使用 HTTPS。`gateway.controlUi.allowInsecureAuth` 仅适用于 localhost，不能放宽远程设备身份验证要求。</value>
+  </data>
+  <data name="DiagnosticControlUiReachableActive" xml:space="preserve">
+    <value>Control UI 可访问，Gateway 会话已激活。</value>
+  </data>
+  <data name="DiagnosticControlUiLoading" xml:space="preserve">
+    <value>Control UI 仍在加载中。</value>
+  </data>
+  <data name="DiagnosticControlUiLoadingDetail" xml:space="preserve">
+    <value>只有在托管页面报告其 Gateway 会话状态之后，才能确认可达性。</value>
+  </data>
+  <data name="DiagnosticControlUiEstablishing" xml:space="preserve">
+    <value>Control UI 可访问，但 Gateway 会话仍在建立中。</value>
+  </data>
+  <data name="DiagnosticControlUiAuthRequired" xml:space="preserve">
+    <value>Control UI 可访问，但需要身份验证。</value>
+  </data>
+  <data name="DiagnosticControlUiPairingRequired" xml:space="preserve">
+    <value>Control UI 可访问，但需要设备配对。</value>
+  </data>
+  <data name="DiagnosticControlUiPairingRequiredDetailFormat" xml:space="preserve">
+    <value>{0} 请在网关主机上使用 `openclaw devices list` 和 `openclaw devices approve --latest`（或提供当前 requestId）批准待处理设备请求。</value>
+  </data>
+  <data name="DiagnosticControlUiOriginRejected" xml:space="preserve">
+    <value>Control UI 可访问，但远程 origin 被拒绝。</value>
+  </data>
+  <data name="DiagnosticControlUiOriginRejectedDetailFormat" xml:space="preserve">
+    <value>{0} 请确认 Cloudflare Tunnel 或反向代理暴露的精确公网 HTTPS origin 已加入 `gateway.controlUi.allowedOrigins`。</value>
+  </data>
+  <data name="DiagnosticControlUiGatewayWsFailing" xml:space="preserve">
+    <value>Control UI 可访问，但 Gateway WebSocket 会话失败。</value>
+  </data>
+  <data name="DiagnosticControlUiStateUnavailable" xml:space="preserve">
+    <value>Control UI 状态暂时不可用。</value>
+  </data>
+  <data name="DiagnosticHttpReachableFormat" xml:space="preserve">
+    <value>Control UI HTTP 端点可访问（{0}）</value>
+  </data>
+  <data name="DiagnosticHttpReachableDetail" xml:space="preserve">
+    <value>仅 HTTP 可达并不能证明 Gateway WebSocket / 会话健康。请加载页面后重新运行诊断，以获得会话级结果。</value>
+  </data>
+  <data name="DiagnosticAccessRejectedFormat" xml:space="preserve">
+    <value>Control UI 可访问，但访问被拒绝（{0}）</value>
+  </data>
+  <data name="DiagnosticAccessRejectedDetail" xml:space="preserve">
+    <value>端点本身可达，但身份验证、密码、token、origin 校验或 trusted-proxy 策略阻止了会话。对于 Cloudflare Tunnel 或反向代理部署，请确认公网 HTTPS origin 已加入 `gateway.controlUi.allowedOrigins`，并在同机 loopback 场景优先使用 token/password，而不是 trusted-proxy。</value>
+  </data>
+  <data name="DiagnosticGatewayWaitingApproval" xml:space="preserve">
+    <value>Control UI 可访问，但 Gateway 正在等待设备批准（409）</value>
+  </data>
+  <data name="DiagnosticGatewayWaitingApprovalDetail" xml:space="preserve">
+    <value>OpenClaw 对新浏览器和设备启用配对。请在网关主机上使用 `openclaw devices list` 和 `openclaw devices approve --latest` 批准当前请求。</value>
+  </data>
+  <data name="DiagnosticAuthRateLimited" xml:space="preserve">
+    <value>Control UI 身份验证暂时被限流（429）</value>
+  </data>
+  <data name="DiagnosticAuthRateLimitedDetail" xml:space="preserve">
+    <value>请等待限流冷却后再重试。同一浏览器反复提交错误 token、密码或 origin 失败可能触发临时锁定。</value>
+  </data>
+  <data name="DiagnosticMethodRejected" xml:space="preserve">
+    <value>Control UI 可访问，但请求方法/路径被拒绝（405）</value>
+  </data>
+  <data name="DiagnosticMethodRejectedDetail" xml:space="preserve">
+    <value>服务器已响应，但 Control UI 路由或反向代理的方法处理可能配置错误。</value>
+  </data>
+  <data name="DiagnosticRedirectedFormat" xml:space="preserve">
+    <value>Control UI 可访问，但发生重定向（{0}）</value>
+  </data>
+  <data name="DiagnosticRedirectedDetail" xml:space="preserve">
+    <value>请确认配置的 Control UI URL、`gateway.controlUi.basePath` 以及 Cloudflare Tunnel / 反向代理的重写规则。</value>
+  </data>
+  <data name="DiagnosticPathNotFound" xml:space="preserve">
+    <value>Control UI 可访问，但请求路径不存在（404）</value>
+  </data>
+  <data name="DiagnosticPathNotFoundDetail" xml:space="preserve">
+    <value>这通常表示配置的 URL 缺少正确的 Control UI base path，或反向代理转发了错误路由。</value>
+  </data>
+  <data name="DiagnosticGatewayReturnedFormat" xml:space="preserve">
+    <value>Gateway 返回 {0} {1}</value>
+  </data>
+  <data name="DiagnosticGatewayReturnedServerFailureDetail" xml:space="preserve">
+    <value>远程端点在托管 UI 建立会话之前就返回了服务端错误。</value>
+  </data>
+  <data name="DiagnosticGatewayReturnedDetail" xml:space="preserve">
+    <value>端点已响应，但仍需从托管 UI 进一步确认 Gateway 会话 / 身份验证状态。</value>
+  </data>
+  <data name="DiagnosticGatewayTimeout" xml:space="preserve">
+    <value>Gateway 超时</value>
+  </data>
+  <data name="DiagnosticGatewayTimeoutDetail" xml:space="preserve">
+    <value>连接在 10 秒后超时。</value>
+  </data>
+  <data name="DiagnosticGatewayUnreachable" xml:space="preserve">
+    <value>Gateway 不可达</value>
+  </data>
+  <data name="DiagnosticNetworkProbeFailed" xml:space="preserve">
+    <value>网络探测失败</value>
+  </data>
+  <data name="DiagnosticWebViewNotInitialized" xml:space="preserve">
+    <value>WebView2 尚未初始化。</value>
+  </data>
+  <data name="DiagnosticGatewaySessionAppearsActive" xml:space="preserve">
+    <value>Gateway 会话看起来已激活。</value>
+  </data>
+  <data name="DiagnosticPageLoadedButEstablishing" xml:space="preserve">
+    <value>页面已加载，但 Gateway 会话仍在建立中。</value>
+  </data>
+  <data name="DiagnosticCurrentDeviceApprovalDetailFormat" xml:space="preserve">
+    <value>{0} 请使用 `openclaw devices approve --latest` 或显式 requestId 批准当前设备请求。</value>
+  </data>
+  <data name="DiagnosticOriginRejectedFailDetailFormat" xml:space="preserve">
+    <value>{0} 请确认公网 HTTPS Control UI origin 已列入 `gateway.controlUi.allowedOrigins`。</value>
+  </data>
+  <data name="DiagnosticNoPageLoaded" xml:space="preserve">
+    <value>尚未加载页面。</value>
+  </data>
+
+  <data name="BridgeGatewayUiLoaded" xml:space="preserve">
+    <value>Gateway UI 已加载。</value>
+  </data>
+  <data name="BridgePageLoading" xml:space="preserve">
+    <value>页面加载中。</value>
+  </data>
+  <data name="BridgeTokenMissingSummary" xml:space="preserve">
+    <value>Gateway 共享 token 缺失。</value>
+  </data>
+  <data name="BridgeTokenMissingDetail" xml:space="preserve">
+    <value>请在 Control UI 设置中填入配置的网关 token。可在网关主机上执行 `openclaw config get gateway.auth.token` 检查。</value>
+  </data>
+  <data name="BridgeTokenMismatchSummary" xml:space="preserve">
+    <value>Gateway token 不匹配。</value>
+  </data>
+  <data name="BridgeTokenMismatchDetail" xml:space="preserve">
+    <value>共享 token 与网关不一致。请确认当前 token；如有需要，轮换或重新批准已配对设备 token。</value>
+  </data>
+  <data name="BridgeDeviceTokenMismatchSummary" xml:space="preserve">
+    <value>保存的设备 token 已失效或被撤销。</value>
+  </data>
+  <data name="BridgeDeviceTokenMismatchDetail" xml:space="preserve">
+    <value>请在网关主机上使用 `openclaw devices list`、`openclaw devices rotate --device &lt;deviceId&gt; --role operator`，或删除后重新批准该设备 token。</value>
+  </data>
+  <data name="BridgeOriginRejectedSummary" xml:space="preserve">
+    <value>Gateway 拒绝了此 origin。</value>
+  </data>
+  <data name="BridgeOriginRejectedDetail" xml:space="preserve">
+    <value>请检查 `gateway.controlUi.allowedOrigins` 和 trusted proxy 设置。对于 Cloudflare Tunnel，必须允许精确的公网 HTTPS origin，并正确转发原始 host/scheme。</value>
+  </data>
+  <data name="BridgeTrustedProxyLoopbackSummary" xml:space="preserve">
+    <value>Trusted-proxy 身份验证在 loopback 场景下被拒绝。</value>
+  </data>
+  <data name="BridgeTrustedProxyLoopbackDetail" xml:space="preserve">
+    <value>同机 loopback 反向代理不满足 `gateway.auth.mode: "trusted-proxy"`。请改用 token/password，或通过非 loopback 的 trusted proxy 地址接入。</value>
+  </data>
+  <data name="BridgeMixedAuthSummary" xml:space="preserve">
+    <value>Gateway 身份验证配置存在歧义。</value>
+  </data>
+  <data name="BridgeMixedAuthDetail" xml:space="preserve">
+    <value>OpenClaw 会拒绝 trusted-proxy 与 token 混合配置。请移除共享 token，或显式设置 `gateway.auth.mode`。</value>
+  </data>
+  <data name="BridgeTrustedProxyHeaderSummary" xml:space="preserve">
+    <value>Trusted-proxy 身份头缺失或无效。</value>
+  </data>
+  <data name="BridgeTrustedProxyHeaderDetail" xml:space="preserve">
+    <value>请检查代理的 identity-header 映射，并确保 HTTP 请求和 WebSocket 升级都转发了相同头信息。</value>
+  </data>
+  <data name="BridgeTrustedProxyOriginSummary" xml:space="preserve">
+    <value>Trusted-proxy 身份验证通过，但浏览器 origin 被拒绝。</value>
+  </data>
+  <data name="BridgeTrustedProxyOriginDetail" xml:space="preserve">
+    <value>请把精确的公网浏览器 origin 加入 `gateway.controlUi.allowedOrigins`。只有在明确接受安全降级时，才应启用 Host-header origin fallback。</value>
+  </data>
+  <data name="BridgeRateLimitedSummary" xml:space="preserve">
+    <value>Gateway 身份验证暂时被限流。</value>
+  </data>
+  <data name="BridgeRateLimitedDetail" xml:space="preserve">
+    <value>请等待限流冷却后再重试。同一浏览器并发的错误重试可能触发 “retry later”。</value>
+  </data>
+  <data name="BridgeInsecureHttpSummary" xml:space="preserve">
+    <value>Control UI 因不安全的 HTTP 上下文被阻止。</value>
+  </data>
+  <data name="BridgeInsecureHttpDetail" xml:space="preserve">
+    <value>请使用 HTTPS（如 Tailscale Serve）或仅在本地打开 UI。`gateway.controlUi.allowInsecureAuth` 只对 localhost 生效，不能放宽远程设备身份要求。</value>
+  </data>
+  <data name="BridgePairingSummary" xml:space="preserve">
+    <value>Gateway 需要设备配对。</value>
+  </data>
+  <data name="BridgePairingDetail" xml:space="preserve">
+    <value>请在网关主机上执行 `openclaw devices list` 和 `openclaw devices approve --latest`（或传入当前 requestId）批准此设备，然后重连。</value>
+  </data>
+  <data name="BridgeAuthRequiredSummary" xml:space="preserve">
+    <value>Gateway 需要身份验证。</value>
+  </data>
+  <data name="BridgeAuthRequiredDetail" xml:space="preserve">
+    <value>请登录或为远程网关提供有效的 token/password。</value>
+  </data>
+  <data name="BridgeGatewaySessionNotConnectedSummary" xml:space="preserve">
+    <value>Gateway 会话未连接。</value>
+  </data>
+  <data name="BridgeGatewaySessionNotConnectedDetail" xml:space="preserve">
+    <value>页面已加载，但 Control UI 仍报告连接存在问题。</value>
+  </data>
+  <data name="BridgeConnectingSummary" xml:space="preserve">
+    <value>正在连接 Gateway...</value>
+  </data>
+  <data name="BridgeConnectingDetail" xml:space="preserve">
+    <value>Control UI 已加载，但仍在建立其 Gateway 会话。</value>
+  </data>
+  <data name="BridgeConnectedSummary" xml:space="preserve">
+    <value>Gateway 会话看起来已激活。</value>
+  </data>
 </root>

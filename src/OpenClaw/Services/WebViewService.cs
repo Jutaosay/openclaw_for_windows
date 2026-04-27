@@ -2,6 +2,7 @@
 
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -17,15 +18,25 @@ public class WebViewService
     private const int DefaultHeartbeatFailureThreshold = 3;
     private const int DefaultHeartbeatConnectingThreshold = 3;
     private WebView2? _webView;
+    private CoreWebView2? _coreWebView;
     private bool _isInitialized;
     private string? _lastNavigatedUrl;
     private int _retryCount;
     private CancellationTokenSource? _retryCts;
     private CancellationTokenSource? _statusProbeCts;
+    private readonly object _inspectionGate = new();
+    private Task<ControlUiProbeSnapshot>? _inFlightInspectionTask;
+    private DateTimeOffset _lastControlUiInspectionAt = DateTimeOffset.MinValue;
     private ControlUiProbeSnapshot _latestControlUiSnapshot = ControlUiProbeSnapshot.Unknown;
     private string? _lastReportedIssueKey;
+    private string? _lastLifecycleLogKey;
     private const int MaxRetries = 3;
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan InspectionReuseWindow = TimeSpan.FromMilliseconds(350);
+    private int _totalControlUiInspectionRequests;
+    private int _cachedControlUiInspectionRequests;
+    private int _coalescedControlUiInspectionRequests;
+    private int _heartbeatRecoveryRequests;
 
     // Heartbeat fields
     private PeriodicTimer? _heartbeatTimer;
@@ -37,9 +48,10 @@ public class WebViewService
     private int _heartbeatIntervalSeconds;
     private int _heartbeatFailureThreshold = DefaultHeartbeatFailureThreshold;
     private int _heartbeatConnectingThreshold = DefaultHeartbeatConnectingThreshold;
-    private static readonly TimeSpan HeartbeatReloadCooldown = TimeSpan.FromSeconds(45);
+    private static readonly TimeSpan HeartbeatReloadCooldown = TimeSpan.FromSeconds(75);
     private static readonly HttpClient HeartbeatHttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
     private DateTimeOffset _lastHeartbeatReloadAt = DateTimeOffset.MinValue;
+    private string? _lastStartHeartbeatKey;
 
     /// <summary>
     /// Raised when the connection/loading state changes.
@@ -91,6 +103,14 @@ public class WebViewService
     /// </summary>
     public ControlUiProbeSnapshot LatestControlUiSnapshot => _latestControlUiSnapshot;
 
+    public int TotalControlUiInspectionRequests => Volatile.Read(ref _totalControlUiInspectionRequests);
+
+    public int CachedControlUiInspectionRequests => Volatile.Read(ref _cachedControlUiInspectionRequests);
+
+    public int CoalescedControlUiInspectionRequests => Volatile.Read(ref _coalescedControlUiInspectionRequests);
+
+    public int HeartbeatRecoveryRequests => Volatile.Read(ref _heartbeatRecoveryRequests);
+
     /// <summary>
     /// Initializes the WebView2 control with a custom user data folder.
     /// </summary>
@@ -98,6 +118,7 @@ public class WebViewService
     {
         DetachCurrentWebView();
         _webView = webView;
+        _coreWebView = null;
         CurrentEnvironmentName = environmentName;
         _isInitialized = false;
 
@@ -111,24 +132,32 @@ public class WebViewService
             Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", userDataFolder);
 
             await _webView.EnsureCoreWebView2Async();
+            var coreWebView = TryGetCoreWebView2(_webView);
+            if (coreWebView is null)
+            {
+                throw new InvalidOperationException("CoreWebView2 became unavailable immediately after initialization.");
+            }
+
+            _coreWebView = coreWebView;
+
             // Make WebView2 follow system Light/Dark theme preferred scheme
-            _webView.CoreWebView2.Profile.PreferredColorScheme = CoreWebView2PreferredColorScheme.Auto;
+            coreWebView.Profile.PreferredColorScheme = CoreWebView2PreferredColorScheme.Auto;
             
             // Set default background to transparent (blends with Mica)
             _webView.DefaultBackgroundColor = Microsoft.UI.Colors.Transparent;
 
             // Wire up events
-            _webView.CoreWebView2.NavigationStarting += OnNavigationStarting;
-            _webView.CoreWebView2.NavigationCompleted += OnNavigationCompleted;
-            _webView.CoreWebView2.ProcessFailed += OnProcessFailed;
-            _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
+            coreWebView.NavigationStarting += OnNavigationStarting;
+            coreWebView.NavigationCompleted += OnNavigationCompleted;
+            coreWebView.ProcessFailed += OnProcessFailed;
+            coreWebView.WebMessageReceived += OnWebMessageReceived;
 
             // Allow file input dialog
-            _webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
-            _webView.CoreWebView2.Settings.IsStatusBarEnabled = false;
-            _webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
+            coreWebView.Settings.AreDefaultContextMenusEnabled = true;
+            coreWebView.Settings.IsStatusBarEnabled = false;
+            coreWebView.Settings.AreDevToolsEnabled = true;
 
-            _webView.CoreWebView2.Settings.IsGeneralAutofillEnabled = true;
+            coreWebView.Settings.IsGeneralAutofillEnabled = true;
 
             _isInitialized = true;
             App.Logger.Info("WebView2 initialized successfully.");
@@ -146,7 +175,8 @@ public class WebViewService
     /// </summary>
     public void Navigate(string url)
     {
-        if (!_isInitialized || _webView?.CoreWebView2 is null)
+        var coreWebView = GetCoreWebView();
+        if (!_isInitialized || coreWebView is null)
         {
             App.Logger.Warning("Cannot navigate: WebView2 not initialized.");
             return;
@@ -166,7 +196,17 @@ public class WebViewService
         _retryCts?.Cancel();
         _retryCts = new CancellationTokenSource();
         SetState(ConnectionState.Loading);
-        _webView.CoreWebView2.Navigate(url);
+        LogLifecycleEventOnce("navigation.start", new { url });
+        try
+        {
+            coreWebView.Navigate(url);
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException)
+        {
+            App.Logger.Warning($"Navigate skipped because CoreWebView2 became unavailable: {ex.Message}");
+            SetState(ConnectionState.Error);
+            NavigationErrorOccurred?.Invoke($"Navigation failed before WebView2 was ready: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -174,10 +214,18 @@ public class WebViewService
     /// </summary>
     public void Reload()
     {
-        if (_webView?.CoreWebView2 is null) return;
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is null) return;
         App.Logger.Info("Reloading page.");
         SetState(ConnectionState.Loading);
-        _webView.CoreWebView2.Reload();
+        try
+        {
+            coreWebView.Reload();
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException)
+        {
+            App.Logger.Warning($"Reload skipped because CoreWebView2 became unavailable: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -185,7 +233,8 @@ public class WebViewService
     /// </summary>
     public async void Stop()
     {
-        if (_webView?.CoreWebView2 is null) return;
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is null) return;
 
         var aborted = await TryAbortActiveRunAsync();
         if (aborted)
@@ -202,7 +251,15 @@ public class WebViewService
         }
 
         App.Logger.Info("Stop command injection unavailable, stopping navigation instead.");
-        _webView.CoreWebView2.Stop();
+        try
+        {
+            coreWebView.Stop();
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException)
+        {
+            App.Logger.Warning($"Stop skipped because CoreWebView2 became unavailable: {ex.Message}");
+            return;
+        }
 
         if (CurrentState == ConnectionState.Loading)
         {
@@ -215,12 +272,13 @@ public class WebViewService
     /// </summary>
     public async Task ClearBrowsingDataAsync()
     {
-        if (_webView?.CoreWebView2 is null) return;
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is null) return;
 
         try
         {
             App.Logger.Info("Clearing browsing data.");
-            await _webView.CoreWebView2.Profile.ClearBrowsingDataAsync();
+            await coreWebView.Profile.ClearBrowsingDataAsync();
             App.Logger.Info("Browsing data cleared.");
         }
         catch (Exception ex)
@@ -234,53 +292,69 @@ public class WebViewService
     /// </summary>
     public void OpenDevTools()
     {
-        _webView?.CoreWebView2?.OpenDevToolsWindow();
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is null)
+        {
+            return;
+        }
+
+        try
+        {
+            coreWebView.OpenDevToolsWindow();
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException)
+        {
+            App.Logger.Warning($"OpenDevTools skipped because CoreWebView2 became unavailable: {ex.Message}");
+        }
     }
 
     /// <summary>
     /// Attempts to inspect the hosted Control UI state via the injected page bridge.
     /// </summary>
-    public async Task<ControlUiProbeSnapshot> InspectControlUiStateAsync()
+    public Task<ControlUiProbeSnapshot> InspectControlUiStateAsync()
     {
-        if (_webView?.CoreWebView2 is null)
+        Interlocked.Increment(ref _totalControlUiInspectionRequests);
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is null)
         {
-            return ControlUiProbeSnapshot.Unavailable("WebView2 is not initialized.");
+            return Task.FromResult(ControlUiProbeSnapshot.Unavailable("WebView2 is not initialized."));
         }
 
-        const string script = """
-(() => {
-  if (!window.__openClawHostBridge || typeof window.__openClawHostBridge.inspect !== 'function') {
-    return JSON.stringify({
-      kind: 'openclaw-control-ui-status',
-      phase: 'unavailable',
-      summary: 'Control UI bridge unavailable.',
-      detail: '',
-      url: window.location ? window.location.href : '',
-      shellDetected: false
-    });
-  }
-
-  return JSON.stringify(window.__openClawHostBridge.inspect());
-})()
-""";
-
-        try
+        lock (_inspectionGate)
         {
-            var rawResult = await _webView.CoreWebView2.ExecuteScriptAsync(script);
-            var payload = JsonSerializer.Deserialize<string>(rawResult);
-            if (string.IsNullOrWhiteSpace(payload))
+            if (_inFlightInspectionTask is not null)
             {
-                return _latestControlUiSnapshot;
+                var coalescedCount = Interlocked.Increment(ref _coalescedControlUiInspectionRequests);
+                if (ShouldLogInspectionInstrumentationCount(coalescedCount))
+                {
+                    App.Logger.Info("webview.inspect.coalesced", new
+                    {
+                        requested = TotalControlUiInspectionRequests,
+                        coalesced = coalescedCount
+                    });
+                }
+                return _inFlightInspectionTask;
             }
 
-            var snapshot = ParseControlUiSnapshot(payload);
-            ApplyControlUiSnapshot(snapshot, raiseIssueEvent: false);
-            return snapshot;
-        }
-        catch (Exception ex)
-        {
-            App.Logger.Warning($"Failed to inspect hosted UI state: {ex.Message}");
-            return ControlUiProbeSnapshot.Unavailable(ex.Message);
+            if (_latestControlUiSnapshot != ControlUiProbeSnapshot.Unknown &&
+                DateTimeOffset.UtcNow - _lastControlUiInspectionAt < InspectionReuseWindow)
+            {
+                var cachedCount = Interlocked.Increment(ref _cachedControlUiInspectionRequests);
+                if (ShouldLogInspectionInstrumentationCount(cachedCount))
+                {
+                    App.Logger.Info("webview.inspect.cached", new
+                    {
+                        requested = TotalControlUiInspectionRequests,
+                        cached = cachedCount
+                    });
+                }
+                return Task.FromResult(_latestControlUiSnapshot);
+            }
+
+            var inspectionSource = new TaskCompletionSource<ControlUiProbeSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _inFlightInspectionTask = inspectionSource.Task;
+            _ = CompleteControlUiInspectionAsync(coreWebView, inspectionSource);
+            return inspectionSource.Task;
         }
     }
 
@@ -294,12 +368,13 @@ public class WebViewService
             return;
         }
 
-        if (_webView?.CoreWebView2 is not null &&
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is not null &&
             _isInitialized &&
             string.Equals(CurrentEnvironmentName, environmentName, StringComparison.Ordinal))
         {
             App.Logger.Info($"Clearing active browsing data for environment '{environmentName}'.");
-            await _webView.CoreWebView2.Profile.ClearBrowsingDataAsync();
+            await coreWebView.Profile.ClearBrowsingDataAsync();
             return;
         }
 
@@ -311,7 +386,8 @@ public class WebViewService
     /// </summary>
     public async Task<bool> InjectStopCommandAsync()
     {
-        if (_webView?.CoreWebView2 is null)
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is null)
         {
             return false;
         }
@@ -416,7 +492,7 @@ public class WebViewService
 
         try
         {
-            var result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
+            var result = await coreWebView.ExecuteScriptAsync(script);
             return string.Equals(result?.Trim(), "true", StringComparison.OrdinalIgnoreCase);
         }
         catch (Exception ex)
@@ -431,7 +507,8 @@ public class WebViewService
     /// </summary>
     public async Task<bool> TryAbortActiveRunAsync()
     {
-        if (_webView?.CoreWebView2 is null)
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is null)
         {
             return false;
         }
@@ -482,7 +559,7 @@ public class WebViewService
 
         try
         {
-            var result = await _webView.CoreWebView2.ExecuteScriptAsync(script);
+            var result = await coreWebView.ExecuteScriptAsync(script);
             return string.Equals(result?.Trim(), "true", StringComparison.OrdinalIgnoreCase);
         }
         catch (Exception ex)
@@ -498,13 +575,22 @@ public class WebViewService
     /// </summary>
     public bool RetryNavigation()
     {
-        if (string.IsNullOrEmpty(_lastNavigatedUrl) || !_isInitialized || _webView?.CoreWebView2 is null)
+        var coreWebView = GetCoreWebView();
+        if (string.IsNullOrEmpty(_lastNavigatedUrl) || !_isInitialized || coreWebView is null)
             return false;
 
         _retryCount = 0; // manual retry resets counter
         App.Logger.Info($"Manual retry navigation to: {_lastNavigatedUrl}");
         SetState(ConnectionState.Loading);
-        _webView.CoreWebView2.Navigate(_lastNavigatedUrl);
+        try
+        {
+            coreWebView.Navigate(_lastNavigatedUrl);
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException)
+        {
+            App.Logger.Warning($"Manual retry skipped because CoreWebView2 became unavailable: {ex.Message}");
+            return false;
+        }
         return true;
     }
 
@@ -513,7 +599,7 @@ public class WebViewService
     /// </summary>
     public string? GetCurrentUrl()
     {
-        return _webView?.CoreWebView2?.Source;
+        return GetCoreWebView()?.Source;
     }
 
     /// <summary>
@@ -567,7 +653,12 @@ public class WebViewService
         _heartbeatCts = new CancellationTokenSource();
         _heartbeatTimer = new PeriodicTimer(TimeSpan.FromSeconds(intervalSeconds));
 
-        App.Logger.Info($"Heartbeat started: interval={intervalSeconds}s, failureThreshold={_heartbeatFailureThreshold}, connectingThreshold={_heartbeatConnectingThreshold}, url={gatewayUrl}");
+        var heartbeatStartKey = $"{gatewayUrl}|{intervalSeconds}|{_heartbeatFailureThreshold}|{_heartbeatConnectingThreshold}";
+        if (!string.Equals(_lastStartHeartbeatKey, heartbeatStartKey, StringComparison.Ordinal))
+        {
+            _lastStartHeartbeatKey = heartbeatStartKey;
+            App.Logger.Info($"Heartbeat started: interval={intervalSeconds}s, failureThreshold={_heartbeatFailureThreshold}, connectingThreshold={_heartbeatConnectingThreshold}, url={gatewayUrl}");
+        }
         _ = RunSessionAwareHeartbeatLoopAsync(gatewayUrl, _heartbeatCts.Token);
     }
 
@@ -592,6 +683,7 @@ public class WebViewService
         _heartbeatIntervalSeconds = 0;
         _heartbeatFailureThreshold = DefaultHeartbeatFailureThreshold;
         _heartbeatConnectingThreshold = DefaultHeartbeatConnectingThreshold;
+        _lastStartHeartbeatKey = null;
     }
 
 
@@ -737,7 +829,7 @@ public class WebViewService
 
     private async Task<HeartbeatProbeResult?> ProbeHostedSessionAsync()
     {
-        if (!_isInitialized || _webView?.CoreWebView2 is null)
+        if (!_isInitialized || GetCoreWebView() is null)
         {
             return null;
         }
@@ -775,7 +867,9 @@ public class WebViewService
         }
 
         _lastHeartbeatReloadAt = DateTimeOffset.UtcNow;
+        Interlocked.Increment(ref _heartbeatRecoveryRequests);
         App.Logger.Warning($"Heartbeat threshold reached, requesting session recovery. Reason: {message}");
+        App.Logger.Info("heartbeat.recovery.count", new { total = HeartbeatRecoveryRequests, message });
         HeartbeatFailed?.Invoke(message);
 
         // Stop heartbeat; coordinator-driven recovery will restart it after the session stabilizes.
@@ -840,6 +934,7 @@ public class WebViewService
         _lastHeartbeatObservationKey = null;
         _latestControlUiSnapshot = ControlUiProbeSnapshot.Loading(args.Uri);
         SetState(ConnectionState.Loading);
+        LogLifecycleEventOnce("navigation.starting", new { uri = args.Uri });
     }
 
     private async void OnNavigationCompleted(CoreWebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
@@ -849,6 +944,7 @@ public class WebViewService
             _retryCount = 0;
             ApplyControlUiSnapshot(ControlUiProbeSnapshot.PageLoaded(sender.Source), raiseIssueEvent: false);
             StartStatusProbeLoop();
+            LogLifecycleEventOnce("navigation.completed", new { uri = sender.Source });
             NavigationCompleted?.Invoke(sender.Source);
         }
         else
@@ -883,9 +979,17 @@ public class WebViewService
                         App.Logger.Info("Auto-retry cancelled (new navigation started).");
                         return;
                     }
-                    if (_webView?.CoreWebView2 is not null && !string.IsNullOrEmpty(_lastNavigatedUrl))
+                    var coreWebView = GetCoreWebView();
+                    if (coreWebView is not null && !string.IsNullOrEmpty(_lastNavigatedUrl))
                     {
-                        _webView.CoreWebView2.Navigate(_lastNavigatedUrl);
+                        try
+                        {
+                            coreWebView.Navigate(_lastNavigatedUrl);
+                        }
+                        catch (Exception ex) when (ex is COMException or InvalidOperationException)
+                        {
+                            App.Logger.Warning($"Auto-retry skipped because CoreWebView2 became unavailable: {ex.Message}");
+                        }
                         return; // don't fire error event for auto-retries
                     }
                 }
@@ -919,17 +1023,21 @@ public class WebViewService
         StopHeartbeat();
         _retryCts?.Cancel();
 
-        if (_webView?.CoreWebView2 is not null)
+        var coreWebView = GetCoreWebView();
+        if (coreWebView is not null)
         {
-            _webView.CoreWebView2.NavigationStarting -= OnNavigationStarting;
-            _webView.CoreWebView2.NavigationCompleted -= OnNavigationCompleted;
-            _webView.CoreWebView2.ProcessFailed -= OnProcessFailed;
-            _webView.CoreWebView2.WebMessageReceived -= OnWebMessageReceived;
+            coreWebView.NavigationStarting -= OnNavigationStarting;
+            coreWebView.NavigationCompleted -= OnNavigationCompleted;
+            coreWebView.ProcessFailed -= OnProcessFailed;
+            coreWebView.WebMessageReceived -= OnWebMessageReceived;
         }
 
         _webView = null;
+        _coreWebView = null;
         _isInitialized = false;
+        _lastControlUiInspectionAt = DateTimeOffset.MinValue;
         _latestControlUiSnapshot = ControlUiProbeSnapshot.Unknown;
+        _lastLifecycleLogKey = null;
     }
 
     public void Dispose()
@@ -937,6 +1045,49 @@ public class WebViewService
         DetachCurrentWebView();
         _retryCts?.Dispose();
         _retryCts = null;
+    }
+
+    private static CoreWebView2? TryGetCoreWebView2(WebView2? webView)
+    {
+        if (webView is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return webView.CoreWebView2;
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private CoreWebView2? GetCoreWebView()
+    {
+        if (_coreWebView is not null)
+        {
+            return _coreWebView;
+        }
+
+        _coreWebView = TryGetCoreWebView2(_webView);
+        return _coreWebView;
+    }
+
+    private void LogLifecycleEventOnce(string eventName, object? context = null)
+    {
+        var logKey = context is null
+            ? eventName
+            : $"{eventName}:{JsonSerializer.Serialize(context)}";
+
+        if (string.Equals(_lastLifecycleLogKey, logKey, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _lastLifecycleLogKey = logKey;
+        App.Logger.Info(eventName, context);
     }
 
     private void StartStatusProbeLoop()
@@ -987,8 +1138,18 @@ public class WebViewService
 
     private void ApplyControlUiSnapshot(ControlUiProbeSnapshot snapshot, bool raiseIssueEvent)
     {
+        var notifySnapshotUpdated = !EqualityComparer<ControlUiProbeSnapshot>.Default.Equals(_latestControlUiSnapshot, snapshot);
         _latestControlUiSnapshot = snapshot;
-        ControlUiSnapshotUpdated?.Invoke(snapshot);
+
+        if (snapshot.IsTerminal)
+        {
+            CancelStatusProbeLoop();
+        }
+
+        if (notifySnapshotUpdated)
+        {
+            ControlUiSnapshotUpdated?.Invoke(snapshot);
+        }
 
         switch (snapshot.Phase)
         {
@@ -1029,6 +1190,78 @@ public class WebViewService
 
         _lastReportedIssueKey = snapshot.IssueKey;
         NavigationErrorOccurred?.Invoke(snapshot.DetailOrSummary);
+    }
+
+    private async Task CompleteControlUiInspectionAsync(
+        CoreWebView2 coreWebView,
+        TaskCompletionSource<ControlUiProbeSnapshot> inspectionSource)
+    {
+        try
+        {
+            inspectionSource.TrySetResult(await ExecuteControlUiInspectionAsync(coreWebView));
+        }
+        catch (Exception ex)
+        {
+            App.Logger.Warning($"Failed to inspect hosted UI state: {ex.Message}");
+            inspectionSource.TrySetResult(ControlUiProbeSnapshot.Unavailable(ex.Message));
+        }
+        finally
+        {
+            lock (_inspectionGate)
+            {
+                if (ReferenceEquals(_inFlightInspectionTask, inspectionSource.Task))
+                {
+                    _inFlightInspectionTask = null;
+                }
+            }
+        }
+    }
+
+    private static bool ShouldLogInspectionInstrumentationCount(int count)
+    {
+        return count == 1 || count % 25 == 0;
+    }
+
+    private async Task<ControlUiProbeSnapshot> ExecuteControlUiInspectionAsync(CoreWebView2 coreWebView)
+    {
+        const string script = """
+(() => {
+  if (!window.__openClawHostBridge || typeof window.__openClawHostBridge.inspect !== 'function') {
+    return JSON.stringify({
+      kind: 'openclaw-control-ui-status',
+      phase: 'unavailable',
+      summary: 'Control UI bridge unavailable.',
+      detail: '',
+      url: window.location ? window.location.href : '',
+      shellDetected: false
+    });
+  }
+
+  return JSON.stringify(window.__openClawHostBridge.inspect());
+})()
+""";
+
+        try
+        {
+            var rawResult = await coreWebView.ExecuteScriptAsync(script);
+            _lastControlUiInspectionAt = DateTimeOffset.UtcNow;
+
+            var payload = JsonSerializer.Deserialize<string>(rawResult);
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                return _latestControlUiSnapshot;
+            }
+
+            var snapshot = ParseControlUiSnapshot(payload);
+            ApplyControlUiSnapshot(snapshot, raiseIssueEvent: false);
+            return snapshot;
+        }
+        catch (Exception ex)
+        {
+            App.Logger.Warning($"Failed to inspect hosted UI state: {ex.Message}");
+            _lastControlUiInspectionAt = DateTimeOffset.UtcNow;
+            return ControlUiProbeSnapshot.Unavailable(ex.Message);
+        }
     }
 
     private static ControlUiProbeSnapshot ParseControlUiSnapshot(string json)

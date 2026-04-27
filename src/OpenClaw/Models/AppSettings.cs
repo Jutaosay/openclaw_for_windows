@@ -47,7 +47,7 @@ public class AppSettings
     /// <summary>
     /// Gets or sets the preferred application language (System, en-US, zh-CN).
     /// </summary>
-    public string AppLanguage { get; set; } = "System";
+    public string AppLanguage { get; set; } = "en-US";
 
     /// <summary>
     /// Gets or sets the heartbeat probe interval in seconds. 0 = disabled.

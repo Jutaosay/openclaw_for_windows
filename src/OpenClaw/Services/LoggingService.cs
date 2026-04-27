@@ -1,5 +1,6 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
 
@@ -14,11 +15,17 @@ public class LoggingService
     private static readonly string LogFolder =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OpenClaw", "logs");
 
-    private readonly object _lock = new();
+    private readonly object _fileLock = new();
+    private readonly ConcurrentQueue<string> _pendingLines = new();
+    private readonly SemaphoreSlim _queueSignal = new(0);
+    private readonly CancellationTokenSource _writerCts = new();
+    private readonly Task _writerTask;
+    private int _disposeState;
 
     public LoggingService()
     {
         Directory.CreateDirectory(LogFolder);
+        _writerTask = Task.Run(ProcessQueueAsync);
     }
 
     /// <summary>
@@ -45,41 +52,128 @@ public class LoggingService
 
     private void Write(string level, string message, object? context)
     {
-        lock (_lock)
+        if (Volatile.Read(ref _disposeState) != 0)
         {
-            try
-            {
-                var timestamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
-                var logEntry = new StructuredLogEntry
-                {
-                    Timestamp = timestamp,
-                    Level = level,
-                    Message = message,
-                    Context = context
-                };
+            return;
+        }
 
-                var line = JsonSerializer.Serialize(logEntry);
-                File.AppendAllText(CurrentLogFilePath, line + Environment.NewLine);
-            }
-            catch
+        try
+        {
+            var timestamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+            var logEntry = new StructuredLogEntry
             {
-                // Swallow logging failures to avoid cascading errors
-            }
+                Timestamp = timestamp,
+                Level = level,
+                Message = message,
+                Context = context
+            };
+
+            EnqueueLine(JsonSerializer.Serialize(logEntry));
+        }
+        catch
+        {
+            // Swallow logging failures to avoid cascading errors
         }
     }
 
-    /// <summary>
-    /// Writes a simple log entry (backward compatibility).
-    /// </summary>
-    private void Write(string level, string message)
+    public void Dispose()
     {
-        lock (_lock)
+        if (Interlocked.Exchange(ref _disposeState, 1) != 0)
+        {
+            return;
+        }
+
+        _writerCts.Cancel();
+
+        try
+        {
+            _queueSignal.Release();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
+        try
+        {
+            _writerTask.Wait(TimeSpan.FromSeconds(2));
+        }
+        catch
+        {
+            // Best-effort flush during shutdown.
+        }
+
+        FlushPendingLines();
+        _writerCts.Dispose();
+        _queueSignal.Dispose();
+    }
+
+    private void EnqueueLine(string line)
+    {
+        _pendingLines.Enqueue(line);
+
+        try
+        {
+            _queueSignal.Release();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+
+    private async Task ProcessQueueAsync()
+    {
+        try
+        {
+            while (true)
+            {
+                await _queueSignal.WaitAsync(_writerCts.Token).ConfigureAwait(false);
+                FlushPendingLines();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+        finally
+        {
+            FlushPendingLines();
+        }
+    }
+
+    private void FlushPendingLines()
+    {
+        if (_pendingLines.IsEmpty)
+        {
+            return;
+        }
+
+        var batch = new List<string>(16);
+        while (_pendingLines.TryDequeue(out var line))
+        {
+            batch.Add(line);
+
+            if (batch.Count >= 32)
+            {
+                WriteBatch(batch);
+                batch.Clear();
+            }
+        }
+
+        if (batch.Count > 0)
+        {
+            WriteBatch(batch);
+        }
+    }
+
+    private void WriteBatch(List<string> lines)
+    {
+        lock (_fileLock)
         {
             try
             {
-                var timestamp = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
-                var line = $"[{timestamp}] [{level}] {message}";
-                File.AppendAllText(CurrentLogFilePath, line + Environment.NewLine);
+                File.AppendAllText(CurrentLogFilePath, string.Join(Environment.NewLine, lines) + Environment.NewLine);
             }
             catch
             {

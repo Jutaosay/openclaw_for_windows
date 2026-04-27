@@ -1,6 +1,7 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.UI.Xaml.Controls;
+using OpenClaw.Helpers;
 
 namespace OpenClaw.Views;
 
@@ -24,7 +25,7 @@ public sealed partial class LogViewerDialog : ContentDialog
         {
             var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
             var logFile = Path.Combine(_logDirectory, $"openclaw-{today}.log");
-            LogFileLabel.Text = $"Log: openclaw-{today}.log";
+            LogFileLabel.Text = string.Format(StringResources.LogFileLabelFormat, $"openclaw-{today}.log");
 
             if (File.Exists(logFile))
             {
@@ -33,7 +34,7 @@ public sealed partial class LogViewerDialog : ContentDialog
                 var lines = content.Split('\n');
                 if (lines.Length > 500)
                 {
-                    LogContent.Text = $"(showing last 500 of {lines.Length} lines)\n\n"
+                    LogContent.Text = string.Format(StringResources.LogShowingLastLinesFormat, lines.Length) + "\n\n"
                         + string.Join('\n', lines.Skip(lines.Length - 500));
                 }
                 else
@@ -43,12 +44,12 @@ public sealed partial class LogViewerDialog : ContentDialog
             }
             else
             {
-                LogContent.Text = "No log file found for today.";
+                LogContent.Text = StringResources.LogNotFoundToday;
             }
         }
         catch (Exception ex)
         {
-            LogContent.Text = $"Failed to read log: {ex.Message}";
+            LogContent.Text = string.Format(StringResources.LogReadFailedFormat, ex.Message);
         }
     }
 

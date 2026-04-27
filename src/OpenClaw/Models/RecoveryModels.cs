@@ -65,81 +65,6 @@ public enum HealthStatus
 }
 
 /// <summary>
-/// Snapshot of connection health at a point in time.
-/// </summary>
-public record ConnectionHealthSnapshot(
-    /// <summary>
-    /// Current recovery state.
-    /// </summary>
-    RecoveryState RecoveryState,
-
-    /// <summary>
-    /// Transport (HTTP/WSS) reachability status.
-    /// </summary>
-    HealthStatus TransportHealth,
-
-    /// <summary>
-    /// Gateway session health status.
-    /// </summary>
-    HealthStatus SessionHealth,
-
-    /// <summary>
-    /// Event stream consistency status.
-    /// </summary>
-    HealthStatus StreamHealth,
-
-    /// <summary>
-    /// Hosted UI availability status.
-    /// </summary>
-    HealthStatus HostedUiHealth,
-
-    /// <summary>
-    /// Last event sequence number observed (if available).
-    /// </summary>
-    long? LastEventSeq,
-
-    /// <summary>
-    /// Last state version observed (if available).
-    /// </summary>
-    string? LastStateVersion,
-
-    /// <summary>
-    /// Timestamp of last event observed.
-    /// </summary>
-    DateTimeOffset? LastEventAt,
-
-    /// <summary>
-    /// Timestamp of last successful heartbeat.
-    /// </summary>
-    DateTimeOffset? LastHeartbeatAt,
-
-    /// <summary>
-    /// Timestamp of last transport activity.
-    /// </summary>
-    DateTimeOffset? LastTransportActivityAt,
-
-    /// <summary>
-    /// Current environment name.
-    /// </summary>
-    string? EnvironmentName,
-
-    /// <summary>
-    /// Current gateway URL.
-    /// </summary>
-    string? GatewayUrl,
-
-    /// <summary>
-    /// Time spent in background (if applicable).
-    /// </summary>
-    TimeSpan? BackgroundDuration,
-
-    /// <summary>
-    /// Human-readable degradation reason (if any).
-    /// </summary>
-    string? DegradationReason
-);
-
-/// <summary>
 /// Telemetry snapshot for recovery diagnostics.
 /// </summary>
 public record RecoveryTelemetrySnapshot(
@@ -201,7 +126,52 @@ public record RecoveryTelemetrySnapshot(
     /// <summary>
     /// Current heartbeat interval (seconds).
     /// </summary>
-    int HeartbeatIntervalSeconds
+    int HeartbeatIntervalSeconds,
+
+    /// <summary>
+    /// Total WebView host recreations completed during this session.
+    /// </summary>
+    int TotalWebViewRecreations,
+
+    /// <summary>
+    /// Number of WebView recreation requests that were merged/debounced.
+    /// </summary>
+    int MergedWebViewRecreationRequests,
+
+    /// <summary>
+    /// Total hosted UI inspection calls requested.
+    /// </summary>
+    int TotalControlUiInspectionRequests,
+
+    /// <summary>
+    /// Number of hosted UI inspection requests served from the short-lived cache window.
+    /// </summary>
+    int CachedControlUiInspectionRequests,
+
+    /// <summary>
+    /// Number of hosted UI inspection requests that reused an in-flight script execution.
+    /// </summary>
+    int CoalescedControlUiInspectionRequests,
+
+    /// <summary>
+    /// Number of deferred configuration save requests queued in this session.
+    /// </summary>
+    int DeferredSaveRequests,
+
+    /// <summary>
+    /// Number of deferred configuration save requests that were merged before writing.
+    /// </summary>
+    int DeferredSaveCoalescedRequests,
+
+    /// <summary>
+    /// Number of heartbeat-triggered reload requests.
+    /// </summary>
+    int HeartbeatRecoveryRequests,
+
+    /// <summary>
+    /// Last instrumentation event recorded by the app.
+    /// </summary>
+    string? LastInstrumentationEvent
 );
 
 /// <summary>

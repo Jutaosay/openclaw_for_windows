@@ -18,11 +18,18 @@ public class ConfigurationService
         Path.Combine(AppDataFolder, "settings.json");
 
     private readonly object _lock = new();
+    private int _saveQueued;
+    private int _deferredSaveRequests;
+    private int _deferredSaveCoalescedRequests;
 
     /// <summary>
     /// Gets the current application settings.
     /// </summary>
     public AppSettings Settings { get; private set; } = new();
+
+    public int DeferredSaveRequests => Volatile.Read(ref _deferredSaveRequests);
+
+    public int DeferredSaveCoalescedRequests => Volatile.Read(ref _deferredSaveCoalescedRequests);
 
     /// <summary>
     /// Loads settings from disk. Creates defaults if the file doesn't exist.
@@ -88,6 +95,60 @@ public class ConfigurationService
                 App.Logger.Error($"Failed to save settings: {ex.Message}");
             }
         }
+    }
+
+    public void SaveDeferred()
+    {
+        Interlocked.Increment(ref _deferredSaveRequests);
+        if (Interlocked.Exchange(ref _saveQueued, 1) != 0)
+        {
+            Interlocked.Increment(ref _deferredSaveCoalescedRequests);
+            App.Logger.Info("settings.save_deferred.coalesced", new
+            {
+                requests = DeferredSaveRequests,
+                coalesced = DeferredSaveCoalescedRequests
+            });
+            return;
+        }
+
+        App.Logger.Info("settings.save_deferred.queued", new
+        {
+            requests = DeferredSaveRequests,
+            coalesced = DeferredSaveCoalescedRequests
+        });
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(250).ConfigureAwait(false);
+                Save();
+                App.Logger.Info("settings.save_deferred.flushed", new
+                {
+                    requests = DeferredSaveRequests,
+                    coalesced = DeferredSaveCoalescedRequests
+                });
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _saveQueued, 0);
+            }
+        });
+    }
+
+    public void FlushDeferredSave()
+    {
+        if (Volatile.Read(ref _saveQueued) == 0)
+        {
+            return;
+        }
+
+        Save();
+        App.Logger.Info("settings.save_deferred.flush_on_shutdown", new
+        {
+            requests = DeferredSaveRequests,
+            coalesced = DeferredSaveCoalescedRequests
+        });
     }
 
     /// <summary>

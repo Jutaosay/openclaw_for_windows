@@ -4,9 +4,11 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:helpers="using:OpenClaw.Helpers"
+    xmlns:models="using:OpenClaw.Models"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Title="Settings">
+    Title="{x:Bind helpers:StringResources.SettingsTitle}">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -37,25 +39,25 @@
                     <ListViewItem x:Name="NavLanguage" Tag="Language">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE774;" FontSize="14" />
-                            <TextBlock Text="Language" FontSize="13" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsNavLanguage}" FontSize="13" VerticalAlignment="Center" />
                         </StackPanel>
                     </ListViewItem>
                     <ListViewItem x:Name="NavEnvironments" Tag="Environments">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE909;" FontSize="14" />
-                            <TextBlock Text="Environments" FontSize="13" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsNavEnvironments}" FontSize="13" VerticalAlignment="Center" />
                         </StackPanel>
                     </ListViewItem>
                     <ListViewItem x:Name="NavSessions" Tag="Sessions">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE74D;" FontSize="14" />
-                            <TextBlock Text="Sessions" FontSize="13" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsNavSessions}" FontSize="13" VerticalAlignment="Center" />
                         </StackPanel>
                     </ListViewItem>
                     <ListViewItem x:Name="NavDevTools" Tag="DevTools">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE9D9;" FontSize="14" />
-                            <TextBlock Text="Dev Tools" FontSize="13" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsNavDevTools}" FontSize="13" VerticalAlignment="Center" />
                         </StackPanel>
                     </ListViewItem>
                 </ListView>
@@ -69,33 +71,33 @@
                 <Grid>
                     <!-- ======= Panel: Language ======= -->
                     <StackPanel x:Name="PanelLanguage" Spacing="12" Visibility="Visible">
-                        <TextBlock Text="Language"
-                                   Style="{StaticResource SubtitleTextBlockStyle}" />
-                        <TextBlock Text="Choose your preferred display language."
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   FontSize="13" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsNavLanguage}"
+                                    Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsLanguageDescription}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="13" />
 
                         <ComboBox x:Name="LanguageComboBox"
                                   SelectionChanged="OnLanguageSelectionChanged"
                                   MinWidth="220"
                                   Margin="0,8,0,0">
-                            <ComboBoxItem Content="System Default" Tag="System" />
-                            <ComboBoxItem Content="English" Tag="en-US" />
-                            <ComboBoxItem Content="中文 (简体)" Tag="zh-CN" />
+                            <ComboBoxItem Content="{x:Bind helpers:StringResources.SettingsLanguageSystem}" Tag="System" />
+                            <ComboBoxItem Content="{x:Bind helpers:StringResources.SettingsLanguageEnglish}" Tag="en-US" />
+                            <ComboBoxItem Content="{x:Bind helpers:StringResources.SettingsLanguageChineseSimplified}" Tag="zh-CN" />
                         </ComboBox>
-                        <TextBlock Text="* Language change requires app restart. / 语言切换需重启应用。"
-                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                   FontSize="12"
-                                   FontStyle="Italic" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsLanguageRestartHint}"
+                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                    FontSize="12"
+                                    FontStyle="Italic" />
                     </StackPanel>
 
                     <!-- ======= Panel: Environments ======= -->
                     <StackPanel x:Name="PanelEnvironments" Spacing="12" Visibility="Collapsed">
-                        <TextBlock Text="Gateway Environments"
-                                   Style="{StaticResource SubtitleTextBlockStyle}" />
-                        <TextBlock Text="Manage your OpenClaw Control UI endpoints."
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    FontSize="13" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsEnvironmentsTitle}"
+                                    Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsEnvironmentsDescription}"
+                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                     FontSize="13" />
 
                         <!-- Environment list -->
                         <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
@@ -125,11 +127,11 @@
                                             Spacing="2" Padding="4"
                                             VerticalAlignment="Top">
                                     <Button Click="OnAddClick"
-                                            ToolTipService.ToolTip="Add" Padding="6">
+                                            ToolTipService.ToolTip="{x:Bind helpers:StringResources.SettingsAddTooltip}" Padding="6">
                                         <FontIcon Glyph="&#xE710;" FontSize="11" />
                                     </Button>
                                     <Button Click="OnRemoveClick"
-                                            ToolTipService.ToolTip="Remove" Padding="6">
+                                            ToolTipService.ToolTip="{x:Bind helpers:StringResources.SettingsRemoveTooltip}" Padding="6">
                                         <FontIcon Glyph="&#xE738;" FontSize="11" />
                                     </Button>
                                 </StackPanel>
@@ -138,61 +140,71 @@
 
                         <!-- Edit form -->
                         <TextBox x:Name="NameTextBox"
-                                 Header="Environment Name"
-                                 PlaceholderText="e.g. Production"
+                                 Header="{x:Bind helpers:StringResources.EnvironmentName}"
+                                 PlaceholderText="{x:Bind helpers:StringResources.SettingsEnvironmentPlaceholder}"
                                  Text="{x:Bind ViewModel.EditName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBox x:Name="UrlTextBox"
-                                 Header="Control UI URL"
+                                 Header="{x:Bind helpers:StringResources.SettingsControlUiUrl}"
                                  PlaceholderText="https://your-gateway.example.com"
                                  Text="{x:Bind ViewModel.EditUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <TextBlock Text="Use the public hosted Control UI page URL (`http://` or `https://`), not the Gateway WebSocket URL. If you connect through Cloudflare Tunnel or another reverse proxy, this should be the exact public origin exposed to the browser."
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsControlUiUrlHint1}"
+                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                     FontSize="12"
+                                     TextWrapping="Wrap" />
+
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsControlUiUrlHint2}"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                     FontSize="12"
                                     TextWrapping="Wrap" />
 
-                        <TextBlock Text="If the page loads but OpenClaw reports origin rejection, add this exact origin to `gateway.controlUi.allowedOrigins` and make sure the reverse proxy / Cloudflare Tunnel preserves the original host and scheme."
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   FontSize="12"
-                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsControlUiUrlHint3}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="12"
+                                    TextWrapping="Wrap" />
+
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsControlUiUrlHint4}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="12"
+                                    TextWrapping="Wrap" />
 
                         <StackPanel Orientation="Horizontal" Spacing="16">
                             <CheckBox x:Name="DefaultCheckBox"
-                                      Content="Set as default"
+                                      Content="{x:Bind helpers:StringResources.SetAsDefault}"
                                       IsChecked="{x:Bind ViewModel.EditIsDefault, Mode=TwoWay}"
                                       VerticalAlignment="Center" />
-                            <Button Content="Apply"
-                                    Click="OnApplyClick"
-                                    Style="{StaticResource AccentButtonStyle}" />
+                            <Button Content="{x:Bind helpers:StringResources.SettingsApply}"
+                                     Click="OnApplyClick"
+                                     Style="{StaticResource AccentButtonStyle}" />
                         </StackPanel>
 
                         <InfoBar x:Name="ValidationInfoBar"
                                  IsOpen="False"
                                  Severity="Error"
-                                 Title="Validation Error"
+                                 Title="{x:Bind helpers:StringResources.SettingsValidationError}"
                                  Message="{x:Bind ViewModel.ValidationMessage, Mode=OneWay}" />
                     </StackPanel>
 
                     <!-- ======= Panel: Sessions ======= -->
                     <StackPanel x:Name="PanelSessions" Spacing="12" Visibility="Collapsed">
-                        <TextBlock Text="Environment Sessions"
-                                   Style="{StaticResource SubtitleTextBlockStyle}" />
-                        <TextBlock Text="Each environment uses its own WebView2Data profile. Clear only the environment you want to reset."
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   FontSize="13"
-                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsSessionsTitle}"
+                                    Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsSessionsDescription}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="13"
+                                    TextWrapping="Wrap" />
 
                         <InfoBar x:Name="SessionInfoBar"
-                                 IsOpen="False"
-                                 Severity="Informational"
-                                 Title="Session Reset" />
+                                  IsOpen="False"
+                                  Severity="Informational"
+                                  Title="{x:Bind helpers:StringResources.SettingsSessionReset}" />
 
                         <ListView x:Name="SessionEnvironmentList"
                                   ItemsSource="{x:Bind ViewModel.Environments}"
                                   SelectionMode="None">
                             <ListView.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="models:EnvironmentConfig">
                                     <Grid Padding="0,8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -200,18 +212,18 @@
                                         </Grid.ColumnDefinitions>
 
                                         <StackPanel Spacing="2">
-                                            <TextBlock Text="{Binding Name}"
+                                            <TextBlock Text="{x:Bind Name}"
                                                        FontSize="13"
                                                        FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding GatewayUrl}"
+                                            <TextBlock Text="{x:Bind GatewayUrl}"
                                                        FontSize="12"
                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                        TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
 
                                         <Button Grid.Column="1"
-                                                Content="Clear Session"
-                                                Tag="{Binding Name}"
+                                                Content="{x:Bind helpers:StringResources.SettingsClearSessionAction}"
+                                                Tag="{x:Bind Name}"
                                                 Click="OnClearEnvironmentSessionClick"
                                                 Margin="12,0,0,0" />
                                     </Grid>
@@ -222,29 +234,37 @@
 
                     <!-- ======= Panel: Developer Tools ======= -->
                     <StackPanel x:Name="PanelDevTools" Spacing="12" Visibility="Collapsed">
-                        <TextBlock Text="Developer Tools"
-                                   Style="{StaticResource SubtitleTextBlockStyle}" />
-                        <TextBlock Text="Diagnostics and debugging utilities."
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   FontSize="13" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsDevToolsTitle}"
+                                    Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsDevToolsDescription}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="13" />
+
+                        <CheckBox Content="{x:Bind helpers:StringResources.SettingsEnableDevLog}"
+                                  IsChecked="{x:Bind ViewModel.EnableDevLog, Mode=TwoWay}"
+                                  Margin="0,4,0,0" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsEnableDevLogDescription}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="12"
+                                    TextWrapping="Wrap" />
 
                         <StackPanel Spacing="8" Margin="0,8,0,0">
                             <Button HorizontalAlignment="Stretch" Click="OnRunDiagnosticsClick">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <FontIcon Glyph="&#xE9D9;" FontSize="14" />
-                                    <TextBlock Text="Run Diagnostics" />
+                                    <TextBlock Text="{x:Bind helpers:StringResources.SettingsRunDiagnostics}" />
                                 </StackPanel>
                             </Button>
                             <Button HorizontalAlignment="Stretch" Click="OnViewLogsClick">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <FontIcon Glyph="&#xE7BA;" FontSize="14" />
-                                    <TextBlock Text="View Logs" />
+                                    <TextBlock Text="{x:Bind helpers:StringResources.SettingsViewLogs}" />
                                 </StackPanel>
                             </Button>
                             <Button HorizontalAlignment="Stretch" Click="OnDevToolsClick">
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <FontIcon Glyph="&#xEC7A;" FontSize="14" />
-                                    <TextBlock Text="Open DevTools" />
+                                    <TextBlock Text="{x:Bind helpers:StringResources.SettingsOpenDevTools}" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -264,11 +284,11 @@
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         Spacing="8">
-                <Button Content="Save"
+                <Button Content="{x:Bind helpers:StringResources.Save}"
                         Click="OnSaveClick"
                         Style="{StaticResource AccentButtonStyle}"
                         MinWidth="80" />
-                <Button Content="Cancel"
+                <Button Content="{x:Bind helpers:StringResources.Cancel}"
                         Click="OnCancelClick"
                         MinWidth="80" />
             </StackPanel>

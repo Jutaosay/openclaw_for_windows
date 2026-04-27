@@ -1,6 +1,7 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.Web.WebView2.Core;
+using OpenClaw.Helpers;
 namespace OpenClaw.Services;
 
 /// <summary>
@@ -10,6 +11,7 @@ namespace OpenClaw.Services;
 public class DiagnosticService
 {
     private static readonly HttpClient SharedHttpClient = CreateHttpClient();
+    private static readonly string[] LocalLoopbackHosts = ["127.0.0.1", "localhost", "::1"];
 
     /// <summary>
     /// Checks whether the WebView2 runtime is installed and available.
@@ -22,17 +24,17 @@ public class DiagnosticService
             if (string.IsNullOrEmpty(version))
             {
                 return DiagnosticResult.Fail(
-                    "WebView2 Runtime not found",
-                    "Please install the WebView2 Evergreen Runtime from https://developer.microsoft.com/en-us/microsoft-edge/webview2/");
+                    StringResources.DiagnosticWebViewRuntimeNotFound,
+                    StringResources.DiagnosticWebViewRuntimeNotFoundDetail);
             }
 
-            return DiagnosticResult.Pass($"WebView2 Runtime v{version}");
+            return DiagnosticResult.Pass($"{StringResources.DiagnosticWebView2RuntimeLabel} v{version}");
         }
         catch (Exception ex)
         {
             return DiagnosticResult.Fail(
-                "WebView2 Runtime check failed",
-                $"Error: {ex.Message}. Please install the WebView2 Evergreen Runtime.");
+                StringResources.DiagnosticWebViewRuntimeCheckFailed,
+                string.Format(StringResources.DiagnosticWebViewRuntimeCheckFailedDetailFormat, ex.Message));
         }
     }
 
@@ -43,33 +45,43 @@ public class DiagnosticService
     {
         if (string.IsNullOrEmpty(gatewayUrl))
         {
-            return DiagnosticResult.Skip("No gateway URL configured.");
+            return DiagnosticResult.Skip(StringResources.DiagnosticNoGatewayUrlConfigured);
+        }
+
+        var uri = Uri.TryCreate(gatewayUrl, UriKind.Absolute, out var parsedUri) ? parsedUri : null;
+        if (uri is not null &&
+            string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) &&
+            !IsLoopbackLike(uri))
+        {
+            return DiagnosticResult.Warn(
+                StringResources.DiagnosticNonLocalHttp,
+                StringResources.DiagnosticNonLocalHttpDetail);
         }
 
         if (snapshot is not null && snapshot.Phase is not ControlUiPhase.Unknown and not ControlUiPhase.Unavailable)
         {
             return snapshot.Phase switch
             {
-                ControlUiPhase.Connected => DiagnosticResult.Pass("Control UI reachable and Gateway session is active."),
+                ControlUiPhase.Connected => DiagnosticResult.Pass(StringResources.DiagnosticControlUiReachableActive),
                 ControlUiPhase.Loading => DiagnosticResult.Warn(
-                    "Control UI is still loading.",
-                    "Reachability is known only after the hosted page reports its Gateway session state."),
+                    StringResources.DiagnosticControlUiLoading,
+                    StringResources.DiagnosticControlUiLoadingDetail),
                 ControlUiPhase.PageLoaded or ControlUiPhase.GatewayConnecting => DiagnosticResult.Warn(
-                    "Control UI reachable, but the Gateway session is still being established.",
+                    StringResources.DiagnosticControlUiEstablishing,
                     snapshot.DetailOrSummary),
                 ControlUiPhase.AuthRequired => DiagnosticResult.Warn(
-                    "Control UI reachable, but authentication is required.",
+                    StringResources.DiagnosticControlUiAuthRequired,
                     snapshot.DetailOrSummary),
                 ControlUiPhase.PairingRequired => DiagnosticResult.Warn(
-                    "Control UI reachable, but device pairing is required.",
-                    snapshot.DetailOrSummary),
+                    StringResources.DiagnosticControlUiPairingRequired,
+                    string.Format(StringResources.DiagnosticControlUiPairingRequiredDetailFormat, snapshot.DetailOrSummary)),
                 ControlUiPhase.OriginRejected => DiagnosticResult.Warn(
-                    "Control UI reachable, but the remote origin was rejected.",
-                    $"{snapshot.DetailOrSummary} Verify that the exact public HTTPS origin exposed by Cloudflare Tunnel or your reverse proxy is present in gateway.controlUi.allowedOrigins."),
+                    StringResources.DiagnosticControlUiOriginRejected,
+                    string.Format(StringResources.DiagnosticControlUiOriginRejectedDetailFormat, snapshot.DetailOrSummary)),
                 ControlUiPhase.GatewayError => DiagnosticResult.Warn(
-                    "Control UI reachable, but the Gateway WebSocket session is failing.",
+                    StringResources.DiagnosticControlUiGatewayWsFailing,
                     snapshot.DetailOrSummary),
-                _ => DiagnosticResult.Skip("Control UI state is not available yet.")
+                _ => DiagnosticResult.Skip(StringResources.DiagnosticControlUiStateUnavailable)
             };
         }
 
@@ -82,45 +94,53 @@ public class DiagnosticService
             {
                 >= 200 and < 300 =>
                     DiagnosticResult.Warn(
-                        $"Control UI HTTP endpoint reachable ({statusCode})",
-                        "HTTP reachability alone does not confirm the Gateway WebSocket/session is healthy. Load the page and re-run diagnostics for a session-aware result."),
+                        string.Format(StringResources.DiagnosticHttpReachableFormat, statusCode),
+                        StringResources.DiagnosticHttpReachableDetail),
                 401 or 403 =>
                     DiagnosticResult.Warn(
-                        $"Control UI reachable but access was rejected ({statusCode})",
-                        "The endpoint is up, but authentication, password, token, or origin validation blocked the session. For Cloudflare Tunnel or reverse-proxy deployments, also verify that the public HTTPS origin is allowed by gateway.controlUi.allowedOrigins."),
+                        string.Format(StringResources.DiagnosticAccessRejectedFormat, statusCode),
+                        StringResources.DiagnosticAccessRejectedDetail),
+                409 =>
+                    DiagnosticResult.Warn(
+                        StringResources.DiagnosticGatewayWaitingApproval,
+                        StringResources.DiagnosticGatewayWaitingApprovalDetail),
+                429 =>
+                    DiagnosticResult.Warn(
+                        StringResources.DiagnosticAuthRateLimited,
+                        StringResources.DiagnosticAuthRateLimitedDetail),
                 405 =>
                     DiagnosticResult.Warn(
-                        "Control UI reachable but the request method/path was rejected (405)",
-                        "The server responded, but the Control UI route or reverse-proxy method handling may be misconfigured."),
+                        StringResources.DiagnosticMethodRejected,
+                        StringResources.DiagnosticMethodRejectedDetail),
                 301 or 302 or 303 or 307 or 308 =>
                     DiagnosticResult.Warn(
-                        $"Control UI reachable but redirected ({statusCode})",
-                        "Verify the configured Control UI URL, gateway.controlUi.basePath, and any Cloudflare Tunnel or reverse-proxy rewrite rules."),
+                        string.Format(StringResources.DiagnosticRedirectedFormat, statusCode),
+                        StringResources.DiagnosticRedirectedDetail),
                 404 =>
                     DiagnosticResult.Warn(
-                        "Control UI reachable but the requested path was not found (404)",
-                        "This often means the configured URL is missing the correct Control UI base path or the reverse proxy is forwarding the wrong route."),
+                        StringResources.DiagnosticPathNotFound,
+                        StringResources.DiagnosticPathNotFoundDetail),
                 >= 500 =>
                     DiagnosticResult.Fail(
-                        $"Gateway returned {statusCode} {response.ReasonPhrase}",
-                        "The remote endpoint is responding with a server-side failure before the hosted UI can establish its session."),
+                        string.Format(StringResources.DiagnosticGatewayReturnedFormat, statusCode, response.ReasonPhrase),
+                        StringResources.DiagnosticGatewayReturnedServerFailureDetail),
                 _ =>
                     DiagnosticResult.Warn(
-                        $"Gateway returned {statusCode} {response.ReasonPhrase}",
-                        "The endpoint responded, but the Gateway session/auth state still needs to be verified from the hosted UI.")
+                        string.Format(StringResources.DiagnosticGatewayReturnedFormat, statusCode, response.ReasonPhrase),
+                        StringResources.DiagnosticGatewayReturnedDetail)
             };
         }
         catch (TaskCanceledException)
         {
-            return DiagnosticResult.Fail("Gateway timeout", "Connection timed out after 10 seconds.");
+            return DiagnosticResult.Fail(StringResources.DiagnosticGatewayTimeout, StringResources.DiagnosticGatewayTimeoutDetail);
         }
         catch (HttpRequestException ex)
         {
-            return DiagnosticResult.Fail("Gateway unreachable", ex.Message);
+            return DiagnosticResult.Fail(StringResources.DiagnosticGatewayUnreachable, ex.Message);
         }
         catch (Exception ex)
         {
-            return DiagnosticResult.Fail("Network probe failed", ex.Message);
+            return DiagnosticResult.Fail(StringResources.DiagnosticNetworkProbeFailed, ex.Message);
         }
     }
 
@@ -132,30 +152,32 @@ public class DiagnosticService
     {
         if (!webViewService.IsInitialized)
         {
-            return DiagnosticResult.Skip("WebView2 not initialized.");
+            return DiagnosticResult.Skip(StringResources.DiagnosticWebViewNotInitialized);
         }
 
         snapshot ??= await webViewService.InspectControlUiStateAsync();
         if (snapshot.Phase == ControlUiPhase.Unavailable)
         {
             return DiagnosticResult.Skip(
-                "Control UI state is not available yet.",
+                StringResources.DiagnosticControlUiStateUnavailable,
                 string.IsNullOrWhiteSpace(snapshot.Detail) ? null : snapshot.Detail);
         }
 
         return snapshot.Phase switch
         {
-            ControlUiPhase.Connected => DiagnosticResult.Pass("Gateway session appears active."),
+            ControlUiPhase.Connected => DiagnosticResult.Pass(StringResources.DiagnosticGatewaySessionAppearsActive),
             ControlUiPhase.PageLoaded or ControlUiPhase.GatewayConnecting => DiagnosticResult.Warn(
                 snapshot.Summary,
-                string.IsNullOrWhiteSpace(snapshot.Detail) ? "The page is loaded, but the Gateway session is still being established." : snapshot.Detail),
+                string.IsNullOrWhiteSpace(snapshot.Detail) ? StringResources.DiagnosticPageLoadedButEstablishing : snapshot.Detail),
             ControlUiPhase.AuthRequired => DiagnosticResult.Warn(snapshot.Summary, snapshot.DetailOrSummary),
-            ControlUiPhase.PairingRequired => DiagnosticResult.Warn(snapshot.Summary, snapshot.DetailOrSummary),
+            ControlUiPhase.PairingRequired => DiagnosticResult.Warn(
+                snapshot.Summary,
+                string.Format(StringResources.DiagnosticCurrentDeviceApprovalDetailFormat, snapshot.DetailOrSummary)),
             ControlUiPhase.OriginRejected => DiagnosticResult.Fail(
                 snapshot.Summary,
-                $"{snapshot.DetailOrSummary} Confirm that the public HTTPS Control UI origin is listed in gateway.controlUi.allowedOrigins."),
+                string.Format(StringResources.DiagnosticOriginRejectedFailDetailFormat, snapshot.DetailOrSummary)),
             ControlUiPhase.GatewayError => DiagnosticResult.Fail(snapshot.Summary, snapshot.DetailOrSummary),
-            _ => DiagnosticResult.Skip("No page loaded.")
+            _ => DiagnosticResult.Skip(StringResources.DiagnosticNoPageLoaded)
         };
     }
 
@@ -167,21 +189,33 @@ public class DiagnosticService
         var report = new DiagnosticReport();
         ControlUiProbeSnapshot? snapshot = null;
 
-        report.Items.Add(("WebView2 Runtime", CheckWebView2Runtime()));
+        report.Items.Add((StringResources.DiagnosticWebView2RuntimeLabel, CheckWebView2Runtime()));
 
         if (webViewService is not null)
         {
             snapshot = await webViewService.InspectControlUiStateAsync();
         }
 
-        report.Items.Add(("Network Connectivity", await ProbeNetworkAsync(gatewayUrl, snapshot)));
+        report.Items.Add((StringResources.DiagnosticNetworkConnectivityLabel, await ProbeNetworkAsync(gatewayUrl, snapshot)));
 
         if (webViewService is not null)
         {
-            report.Items.Add(("Session Status", await CheckSessionAsync(webViewService, snapshot)));
+            report.Items.Add((StringResources.DiagnosticSessionStatusLabel, await CheckSessionAsync(webViewService, snapshot)));
+            report.Items.Add((StringResources.DiagnosticInstrumentationLabel, DescribeInstrumentation(webViewService)));
         }
 
         return report;
+    }
+
+    public static DiagnosticResult DescribeInstrumentation(WebViewService webViewService)
+    {
+        var summary =
+            $"Inspect req={webViewService.TotalControlUiInspectionRequests}, " +
+            $"cache={webViewService.CachedControlUiInspectionRequests}, " +
+            $"coalesced={webViewService.CoalescedControlUiInspectionRequests}, " +
+            $"hb reload={webViewService.HeartbeatRecoveryRequests}.";
+
+        return DiagnosticResult.Pass(summary);
     }
 
     private static HttpClient CreateHttpClient()
@@ -193,6 +227,12 @@ public class DiagnosticService
         {
             Timeout = TimeSpan.FromSeconds(10),
         };
+    }
+
+    private static bool IsLoopbackLike(Uri uri)
+    {
+        return uri.IsLoopback ||
+            LocalLoopbackHosts.Contains(uri.Host, StringComparer.OrdinalIgnoreCase);
     }
 }
 

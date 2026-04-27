@@ -40,7 +40,6 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 
-  <!-- Top Bar -->
   <data name="Reload" xml:space="preserve">
     <value>Reload</value>
   </data>
@@ -56,8 +55,37 @@
   <data name="ClearSession" xml:space="preserve">
     <value>Clear Session</value>
   </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="DevTools" xml:space="preserve">
+    <value>Developer Tools</value>
+  </data>
+  <data name="DiagnosticsTitle" xml:space="preserve">
+    <value>Diagnostics</value>
+  </data>
+  <data name="SelectEnvironment" xml:space="preserve">
+    <value>Select environment</value>
+  </data>
+  <data name="MainModelLabel" xml:space="preserve">
+    <value>MODEL :</value>
+  </data>
+  <data name="MainStatusLabel" xml:space="preserve">
+    <value>Status :</value>
+  </data>
+  <data name="ThemeSystem" xml:space="preserve">
+    <value>System theme</value>
+  </data>
+  <data name="ThemeLight" xml:space="preserve">
+    <value>Light theme</value>
+  </data>
+  <data name="ThemeDark" xml:space="preserve">
+    <value>Dark theme</value>
+  </data>
 
-  <!-- Status Bar -->
   <data name="StatusConnected" xml:space="preserve">
     <value>Connected</value>
   </data>
@@ -79,8 +107,41 @@
   <data name="StatusOffline" xml:space="preserve">
     <value>Offline</value>
   </data>
+  <data name="StatusHeartbeatFailed" xml:space="preserve">
+    <value>Gateway heartbeat lost - refreshing...</value>
+  </data>
+  <data name="HeartbeatOk" xml:space="preserve">
+    <value>HB OK</value>
+  </data>
+  <data name="HeartbeatWait" xml:space="preserve">
+    <value>HB WAIT</value>
+  </data>
+  <data name="HeartbeatBlocked" xml:space="preserve">
+    <value>HB BLOCK</value>
+  </data>
+  <data name="HeartbeatFailed" xml:space="preserve">
+    <value>HB FAIL</value>
+  </data>
 
-  <!-- Settings Dialog -->
+  <data name="RecoveryConnecting" xml:space="preserve">
+    <value>Connecting...</value>
+  </data>
+  <data name="RecoveryReconnecting" xml:space="preserve">
+    <value>Reconnecting...</value>
+  </data>
+  <data name="RecoveryResyncing" xml:space="preserve">
+    <value>Resyncing session...</value>
+  </data>
+  <data name="RecoveryRefreshing" xml:space="preserve">
+    <value>Refreshing page...</value>
+  </data>
+  <data name="RecoveryDegraded" xml:space="preserve">
+    <value>Connection degraded</value>
+  </data>
+  <data name="RecoveryFailed" xml:space="preserve">
+    <value>Recovery failed - manual action required</value>
+  </data>
+
   <data name="SettingsTitle" xml:space="preserve">
     <value>Settings</value>
   </data>
@@ -108,13 +169,140 @@
   <data name="NoEnvironments" xml:space="preserve">
     <value>No environments configured. Add one to get started.</value>
   </data>
+  <data name="SettingsNavLanguage" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="SettingsNavEnvironments" xml:space="preserve">
+    <value>Environments</value>
+  </data>
+  <data name="SettingsNavSessions" xml:space="preserve">
+    <value>Sessions</value>
+  </data>
+  <data name="SettingsNavDevTools" xml:space="preserve">
+    <value>Dev Tools</value>
+  </data>
+  <data name="SettingsLanguageDescription" xml:space="preserve">
+    <value>Choose your preferred display language.</value>
+  </data>
+  <data name="SettingsLanguageSystem" xml:space="preserve">
+    <value>System Default</value>
+  </data>
+  <data name="SettingsLanguageEnglish" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="SettingsLanguageChineseSimplified" xml:space="preserve">
+    <value>Simplified Chinese</value>
+  </data>
+  <data name="SettingsLanguageRestartHint" xml:space="preserve">
+    <value>* Language change requires app restart.</value>
+  </data>
+  <data name="SettingsEnvironmentsTitle" xml:space="preserve">
+    <value>Gateway Environments</value>
+  </data>
+  <data name="SettingsEnvironmentsDescription" xml:space="preserve">
+    <value>Manage your OpenClaw Control UI endpoints.</value>
+  </data>
+  <data name="SettingsAddTooltip" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="SettingsRemoveTooltip" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="SettingsEnvironmentPlaceholder" xml:space="preserve">
+    <value>e.g. Production</value>
+  </data>
+  <data name="SettingsControlUiUrl" xml:space="preserve">
+    <value>Control UI URL</value>
+  </data>
+  <data name="SettingsControlUiUrlHint1" xml:space="preserve">
+    <value>Use the public hosted Control UI page URL (`http://` or `https://`), not the Gateway WebSocket URL. If you connect through Cloudflare Tunnel or another reverse proxy, this should be the exact public origin exposed to the browser.</value>
+  </data>
+  <data name="SettingsControlUiUrlHint2" xml:space="preserve">
+    <value>If the page loads but OpenClaw reports origin rejection, add this exact origin to `gateway.controlUi.allowedOrigins` and make sure the reverse proxy / Cloudflare Tunnel preserves the original host and scheme.</value>
+  </data>
+  <data name="SettingsControlUiUrlHint3" xml:space="preserve">
+    <value>For same-host VPS reverse proxies or Cloudflare Tunnel sidecars, current OpenClaw docs recommend `gateway.auth.mode: "token"` or `"password"` instead of `"trusted-proxy"`. Same-host loopback forwarding does not satisfy trusted-proxy auth.</value>
+  </data>
+  <data name="SettingsControlUiUrlHint4" xml:space="preserve">
+    <value>If OpenClaw asks for device pairing, approve the pending request on the gateway host with `openclaw devices list` and `openclaw devices approve --latest`, then reconnect this desktop client.</value>
+  </data>
+  <data name="SettingsApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="SettingsValidationError" xml:space="preserve">
+    <value>Validation Error</value>
+  </data>
+  <data name="SettingsSessionsTitle" xml:space="preserve">
+    <value>Environment Sessions</value>
+  </data>
+  <data name="SettingsSessionsDescription" xml:space="preserve">
+    <value>Each environment uses its own WebView2Data profile. Clear only the environment you want to reset.</value>
+  </data>
+  <data name="SettingsSessionReset" xml:space="preserve">
+    <value>Session Reset</value>
+  </data>
+  <data name="SettingsClearSessionAction" xml:space="preserve">
+    <value>Clear Session</value>
+  </data>
+  <data name="SettingsDevToolsTitle" xml:space="preserve">
+    <value>Developer Tools</value>
+  </data>
+  <data name="SettingsDevToolsDescription" xml:space="preserve">
+    <value>Diagnostics and debugging utilities.</value>
+  </data>
+  <data name="SettingsEnableDevLog" xml:space="preserve">
+    <value>Enable Dev Log</value>
+  </data>
+  <data name="SettingsEnableDevLogDescription" xml:space="preserve">
+    <value>When enabled, the app writes verbose recovery telemetry and internal diagnostics to the log file.</value>
+  </data>
+  <data name="SettingsRunDiagnostics" xml:space="preserve">
+    <value>Run Diagnostics</value>
+  </data>
+  <data name="SettingsViewLogs" xml:space="preserve">
+    <value>View Logs</value>
+  </data>
+  <data name="SettingsOpenDevTools" xml:space="preserve">
+    <value>Open DevTools</value>
+  </data>
+  <data name="SettingsSessionResetSelectEnvironment" xml:space="preserve">
+    <value>Select an environment to clear its session.</value>
+  </data>
+  <data name="SettingsSessionResetCompleted" xml:space="preserve">
+    <value>Cleared the saved session for '{0}'.</value>
+  </data>
+  <data name="SettingsValidationDefaultMessage" xml:space="preserve">
+    <value>All environments must have a unique name and a valid http(s) Control UI URL. For Cloudflare Tunnel or reverse-proxy deployments, use the public HTTPS Control UI URL and keep gateway.controlUi.allowedOrigins in sync with its exact origin.</value>
+  </data>
+  <data name="SettingsValidationSelectEnvironment" xml:space="preserve">
+    <value>Select an environment first.</value>
+  </data>
+  <data name="SettingsValidationDuplicateEnvironment" xml:space="preserve">
+    <value>Environment name '{0}' is duplicated. Session isolation now uses environment names, so each environment name must be unique.</value>
+  </data>
+  <data name="SettingsValidationEnvironmentNameRequired" xml:space="preserve">
+    <value>Environment name is required.</value>
+  </data>
+  <data name="SettingsValidationControlUiUrlRequired" xml:space="preserve">
+    <value>Control UI URL is required.</value>
+  </data>
+  <data name="SettingsValidationControlUiUrlAbsolute" xml:space="preserve">
+    <value>Control UI URL must be an absolute URL.</value>
+  </data>
+  <data name="SettingsValidationControlUiUrlWs" xml:space="preserve">
+    <value>Use the Control UI page URL here (http/https), not the Gateway WebSocket URL (ws/wss).</value>
+  </data>
+  <data name="SettingsValidationControlUiUrlScheme" xml:space="preserve">
+    <value>Control UI URL must use http or https.</value>
+  </data>
+  <data name="SettingsGeneratedEnvironmentName" xml:space="preserve">
+    <value>Environment {0}</value>
+  </data>
 
-  <!-- App -->
   <data name="AppDisplayName" xml:space="preserve">
     <value>OpenClaw Manager</value>
   </data>
 
-  <!-- Phase 2 - Quick Commands -->
   <data name="QuickCommands" xml:space="preserve">
     <value>Quick Commands</value>
   </data>
@@ -131,52 +319,285 @@
     <value>/queue - Queue interrupt</value>
   </data>
 
-  <!-- Phase 2 - InfoBar and Retry -->
   <data name="ConnectionIssue" xml:space="preserve">
     <value>Connection Issue</value>
   </data>
-  <data name="Retry" xml:space="preserve">
-    <value>Retry</value>
+  <data name="AboutTitle" xml:space="preserve">
+    <value>About</value>
   </data>
-  <data name="DevTools" xml:space="preserve">
-    <value>Developer Tools</value>
+  <data name="AboutDescription" xml:space="preserve">
+    <value>A native Windows management shell for OpenClaw Gateway, built with WinUI 3 and WebView2.</value>
   </data>
-
-  <!-- Heartbeat -->
-  <data name="StatusHeartbeatFailed" xml:space="preserve">
-    <value>Gateway heartbeat lost - refreshing...</value>
+  <data name="AboutRepository" xml:space="preserve">
+    <value>GitHub Repository</value>
   </data>
-  <data name="HeartbeatOk" xml:space="preserve">
-    <value>HB OK</value>
+  <data name="AboutDevelopedBy" xml:space="preserve">
+    <value>Developed by </value>
   </data>
-  <data name="HeartbeatWait" xml:space="preserve">
-    <value>HB WAIT</value>
+  <data name="AboutCopyright" xml:space="preserve">
+    <value>(C) 2026 Lanstack @openclaw. All rights reserved.</value>
   </data>
-  <data name="HeartbeatBlocked" xml:space="preserve">
-    <value>HB BLOCK</value>
+  <data name="LogsTitle" xml:space="preserve">
+    <value>Application Logs</value>
   </data>
-  <data name="HeartbeatFailed" xml:space="preserve">
-    <value>HB FAIL</value>
+  <data name="RefreshLogs" xml:space="preserve">
+    <value>Refresh logs</value>
   </data>
-
-  <!-- Phase 2 - Recovery States -->
-  <data name="RecoveryConnecting" xml:space="preserve">
-    <value>Connecting...</value>
+  <data name="OpenLogFolder" xml:space="preserve">
+    <value>Open log folder</value>
   </data>
-  <data name="RecoveryReconnecting" xml:space="preserve">
-    <value>Reconnecting...</value>
+  <data name="LogFileLabelFormat" xml:space="preserve">
+    <value>Log: {0}</value>
   </data>
-  <data name="RecoveryResyncing" xml:space="preserve">
-    <value>Resyncing session...</value>
+  <data name="LogShowingLastLinesFormat" xml:space="preserve">
+    <value>(showing last 500 of {0} lines)</value>
   </data>
-  <data name="RecoveryRefreshing" xml:space="preserve">
-    <value>Refreshing page...</value>
+  <data name="LogNotFoundToday" xml:space="preserve">
+    <value>No log file found for today.</value>
   </data>
-  <data name="RecoveryDegraded" xml:space="preserve">
-    <value>Connection degraded</value>
-  </data>
-  <data name="RecoveryFailed" xml:space="preserve">
-    <value>Recovery failed - manual action required</value>
+  <data name="LogReadFailedFormat" xml:space="preserve">
+    <value>Failed to read log: {0}</value>
   </data>
 
+  <data name="DiagnosticWebView2RuntimeLabel" xml:space="preserve">
+    <value>WebView2 Runtime</value>
+  </data>
+  <data name="DiagnosticNetworkConnectivityLabel" xml:space="preserve">
+    <value>Network Connectivity</value>
+  </data>
+  <data name="DiagnosticSessionStatusLabel" xml:space="preserve">
+    <value>Session Status</value>
+  </data>
+  <data name="DiagnosticInstrumentationLabel" xml:space="preserve">
+    <value>Runtime Instrumentation</value>
+  </data>
+  <data name="DiagnosticWebViewRuntimeNotFound" xml:space="preserve">
+    <value>WebView2 Runtime not found</value>
+  </data>
+  <data name="DiagnosticWebViewRuntimeNotFoundDetail" xml:space="preserve">
+    <value>Please install the WebView2 Evergreen Runtime from https://developer.microsoft.com/en-us/microsoft-edge/webview2/</value>
+  </data>
+  <data name="DiagnosticWebViewRuntimeCheckFailed" xml:space="preserve">
+    <value>WebView2 Runtime check failed</value>
+  </data>
+  <data name="DiagnosticWebViewRuntimeCheckFailedDetailFormat" xml:space="preserve">
+    <value>Error: {0}. Please install the WebView2 Evergreen Runtime.</value>
+  </data>
+  <data name="DiagnosticNoGatewayUrlConfigured" xml:space="preserve">
+    <value>No gateway URL configured.</value>
+  </data>
+  <data name="DiagnosticNonLocalHttp" xml:space="preserve">
+    <value>Control UI is configured over non-local HTTP.</value>
+  </data>
+  <data name="DiagnosticNonLocalHttpDetail" xml:space="preserve">
+    <value>Current OpenClaw docs recommend HTTPS for remote browser access. gateway.controlUi.allowInsecureAuth is localhost-only and does not relax remote device identity requirements.</value>
+  </data>
+  <data name="DiagnosticControlUiReachableActive" xml:space="preserve">
+    <value>Control UI reachable and Gateway session is active.</value>
+  </data>
+  <data name="DiagnosticControlUiLoading" xml:space="preserve">
+    <value>Control UI is still loading.</value>
+  </data>
+  <data name="DiagnosticControlUiLoadingDetail" xml:space="preserve">
+    <value>Reachability is known only after the hosted page reports its Gateway session state.</value>
+  </data>
+  <data name="DiagnosticControlUiEstablishing" xml:space="preserve">
+    <value>Control UI reachable, but the Gateway session is still being established.</value>
+  </data>
+  <data name="DiagnosticControlUiAuthRequired" xml:space="preserve">
+    <value>Control UI reachable, but authentication is required.</value>
+  </data>
+  <data name="DiagnosticControlUiPairingRequired" xml:space="preserve">
+    <value>Control UI reachable, but device pairing is required.</value>
+  </data>
+  <data name="DiagnosticControlUiPairingRequiredDetailFormat" xml:space="preserve">
+    <value>{0} Approve the pending device request on the gateway host with `openclaw devices list` and `openclaw devices approve --latest` (or supply the current requestId).</value>
+  </data>
+  <data name="DiagnosticControlUiOriginRejected" xml:space="preserve">
+    <value>Control UI reachable, but the remote origin was rejected.</value>
+  </data>
+  <data name="DiagnosticControlUiOriginRejectedDetailFormat" xml:space="preserve">
+    <value>{0} Verify that the exact public HTTPS origin exposed by Cloudflare Tunnel or your reverse proxy is present in gateway.controlUi.allowedOrigins.</value>
+  </data>
+  <data name="DiagnosticControlUiGatewayWsFailing" xml:space="preserve">
+    <value>Control UI reachable, but the Gateway WebSocket session is failing.</value>
+  </data>
+  <data name="DiagnosticControlUiStateUnavailable" xml:space="preserve">
+    <value>Control UI state is not available yet.</value>
+  </data>
+  <data name="DiagnosticHttpReachableFormat" xml:space="preserve">
+    <value>Control UI HTTP endpoint reachable ({0})</value>
+  </data>
+  <data name="DiagnosticHttpReachableDetail" xml:space="preserve">
+    <value>HTTP reachability alone does not confirm the Gateway WebSocket/session is healthy. Load the page and re-run diagnostics for a session-aware result.</value>
+  </data>
+  <data name="DiagnosticAccessRejectedFormat" xml:space="preserve">
+    <value>Control UI reachable but access was rejected ({0})</value>
+  </data>
+  <data name="DiagnosticAccessRejectedDetail" xml:space="preserve">
+    <value>The endpoint is up, but authentication, password, token, origin validation, or trusted-proxy policy blocked the session. For Cloudflare Tunnel or reverse-proxy deployments, verify the public HTTPS origin in gateway.controlUi.allowedOrigins and prefer token/password auth over trusted-proxy on same-host loopback setups.</value>
+  </data>
+  <data name="DiagnosticGatewayWaitingApproval" xml:space="preserve">
+    <value>Control UI reachable but the gateway is waiting for device approval (409)</value>
+  </data>
+  <data name="DiagnosticGatewayWaitingApprovalDetail" xml:space="preserve">
+    <value>OpenClaw uses pairing for new browsers and devices. Approve the current request on the gateway host with `openclaw devices list` and `openclaw devices approve --latest`.</value>
+  </data>
+  <data name="DiagnosticAuthRateLimited" xml:space="preserve">
+    <value>Control UI auth is temporarily rate-limited (429)</value>
+  </data>
+  <data name="DiagnosticAuthRateLimitedDetail" xml:space="preserve">
+    <value>Wait for the limiter to cool down before retrying. Repeated bad tokens, passwords, or origin failures from the same browser can trigger a temporary lockout.</value>
+  </data>
+  <data name="DiagnosticMethodRejected" xml:space="preserve">
+    <value>Control UI reachable but the request method/path was rejected (405)</value>
+  </data>
+  <data name="DiagnosticMethodRejectedDetail" xml:space="preserve">
+    <value>The server responded, but the Control UI route or reverse-proxy method handling may be misconfigured.</value>
+  </data>
+  <data name="DiagnosticRedirectedFormat" xml:space="preserve">
+    <value>Control UI reachable but redirected ({0})</value>
+  </data>
+  <data name="DiagnosticRedirectedDetail" xml:space="preserve">
+    <value>Verify the configured Control UI URL, gateway.controlUi.basePath, and any Cloudflare Tunnel or reverse-proxy rewrite rules.</value>
+  </data>
+  <data name="DiagnosticPathNotFound" xml:space="preserve">
+    <value>Control UI reachable but the requested path was not found (404)</value>
+  </data>
+  <data name="DiagnosticPathNotFoundDetail" xml:space="preserve">
+    <value>This often means the configured URL is missing the correct Control UI base path or the reverse proxy is forwarding the wrong route.</value>
+  </data>
+  <data name="DiagnosticGatewayReturnedFormat" xml:space="preserve">
+    <value>Gateway returned {0} {1}</value>
+  </data>
+  <data name="DiagnosticGatewayReturnedServerFailureDetail" xml:space="preserve">
+    <value>The remote endpoint is responding with a server-side failure before the hosted UI can establish its session.</value>
+  </data>
+  <data name="DiagnosticGatewayReturnedDetail" xml:space="preserve">
+    <value>The endpoint responded, but the Gateway session/auth state still needs to be verified from the hosted UI.</value>
+  </data>
+  <data name="DiagnosticGatewayTimeout" xml:space="preserve">
+    <value>Gateway timeout</value>
+  </data>
+  <data name="DiagnosticGatewayTimeoutDetail" xml:space="preserve">
+    <value>Connection timed out after 10 seconds.</value>
+  </data>
+  <data name="DiagnosticGatewayUnreachable" xml:space="preserve">
+    <value>Gateway unreachable</value>
+  </data>
+  <data name="DiagnosticNetworkProbeFailed" xml:space="preserve">
+    <value>Network probe failed</value>
+  </data>
+  <data name="DiagnosticWebViewNotInitialized" xml:space="preserve">
+    <value>WebView2 not initialized.</value>
+  </data>
+  <data name="DiagnosticGatewaySessionAppearsActive" xml:space="preserve">
+    <value>Gateway session appears active.</value>
+  </data>
+  <data name="DiagnosticPageLoadedButEstablishing" xml:space="preserve">
+    <value>The page is loaded, but the Gateway session is still being established.</value>
+  </data>
+  <data name="DiagnosticCurrentDeviceApprovalDetailFormat" xml:space="preserve">
+    <value>{0} Approve the current device request with `openclaw devices approve --latest` or the explicit requestId.</value>
+  </data>
+  <data name="DiagnosticOriginRejectedFailDetailFormat" xml:space="preserve">
+    <value>{0} Confirm that the public HTTPS Control UI origin is listed in gateway.controlUi.allowedOrigins.</value>
+  </data>
+  <data name="DiagnosticNoPageLoaded" xml:space="preserve">
+    <value>No page loaded.</value>
+  </data>
+
+  <data name="BridgeGatewayUiLoaded" xml:space="preserve">
+    <value>Gateway UI loaded.</value>
+  </data>
+  <data name="BridgePageLoading" xml:space="preserve">
+    <value>Page is loading.</value>
+  </data>
+  <data name="BridgeTokenMissingSummary" xml:space="preserve">
+    <value>Gateway shared token is missing.</value>
+  </data>
+  <data name="BridgeTokenMissingDetail" xml:space="preserve">
+    <value>Set the configured gateway token in Control UI settings. On the gateway host, check `openclaw config get gateway.auth.token`.</value>
+  </data>
+  <data name="BridgeTokenMismatchSummary" xml:space="preserve">
+    <value>Gateway token does not match.</value>
+  </data>
+  <data name="BridgeTokenMismatchDetail" xml:space="preserve">
+    <value>The shared token does not match the gateway. Confirm the current token and, if needed, rotate or re-approve the paired device token.</value>
+  </data>
+  <data name="BridgeDeviceTokenMismatchSummary" xml:space="preserve">
+    <value>Stored device token is stale or revoked.</value>
+  </data>
+  <data name="BridgeDeviceTokenMismatchDetail" xml:space="preserve">
+    <value>Rotate or re-approve the device token on the gateway host with `openclaw devices list`, `openclaw devices rotate --device &lt;deviceId&gt; --role operator`, or remove and approve again.</value>
+  </data>
+  <data name="BridgeOriginRejectedSummary" xml:space="preserve">
+    <value>Gateway rejected this origin.</value>
+  </data>
+  <data name="BridgeOriginRejectedDetail" xml:space="preserve">
+    <value>Check gateway.controlUi.allowedOrigins and trusted proxy settings. For Cloudflare Tunnel, the exact public HTTPS origin must be allowed and the original host/scheme must be forwarded.</value>
+  </data>
+  <data name="BridgeTrustedProxyLoopbackSummary" xml:space="preserve">
+    <value>Trusted-proxy auth was rejected from loopback.</value>
+  </data>
+  <data name="BridgeTrustedProxyLoopbackDetail" xml:space="preserve">
+    <value>Same-host loopback reverse proxies do not satisfy gateway.auth.mode: "trusted-proxy". Use token/password auth instead, or route through a non-loopback trusted proxy address.</value>
+  </data>
+  <data name="BridgeMixedAuthSummary" xml:space="preserve">
+    <value>Gateway auth configuration is ambiguous.</value>
+  </data>
+  <data name="BridgeMixedAuthDetail" xml:space="preserve">
+    <value>OpenClaw rejects mixed trusted-proxy + token configs. Remove the shared token or set gateway.auth.mode explicitly.</value>
+  </data>
+  <data name="BridgeTrustedProxyHeaderSummary" xml:space="preserve">
+    <value>Trusted-proxy identity headers are missing or invalid.</value>
+  </data>
+  <data name="BridgeTrustedProxyHeaderDetail" xml:space="preserve">
+    <value>Check the proxy identity-header mapping and make sure the same headers are forwarded on both HTTP requests and WebSocket upgrades.</value>
+  </data>
+  <data name="BridgeTrustedProxyOriginSummary" xml:space="preserve">
+    <value>Trusted-proxy auth passed, but the browser origin was rejected.</value>
+  </data>
+  <data name="BridgeTrustedProxyOriginDetail" xml:space="preserve">
+    <value>Add the exact public browser origin to gateway.controlUi.allowedOrigins. Only use Host-header origin fallback if you intentionally accepted the security downgrade.</value>
+  </data>
+  <data name="BridgeRateLimitedSummary" xml:space="preserve">
+    <value>Gateway auth is temporarily rate-limited.</value>
+  </data>
+  <data name="BridgeRateLimitedDetail" xml:space="preserve">
+    <value>Wait and retry after the auth limiter cools down. Concurrent bad retries from the same browser can trigger "retry later".</value>
+  </data>
+  <data name="BridgeInsecureHttpSummary" xml:space="preserve">
+    <value>Control UI is blocked by insecure HTTP context.</value>
+  </data>
+  <data name="BridgeInsecureHttpDetail" xml:space="preserve">
+    <value>Use HTTPS (Tailscale Serve) or open the UI locally. gateway.controlUi.allowInsecureAuth is localhost-only and does not relax remote device identity requirements.</value>
+  </data>
+  <data name="BridgePairingSummary" xml:space="preserve">
+    <value>Gateway requires device pairing.</value>
+  </data>
+  <data name="BridgePairingDetail" xml:space="preserve">
+    <value>Approve this device on the gateway host with `openclaw devices list` and `openclaw devices approve --latest` (or pass the current requestId), then reconnect.</value>
+  </data>
+  <data name="BridgeAuthRequiredSummary" xml:space="preserve">
+    <value>Gateway authentication is required.</value>
+  </data>
+  <data name="BridgeAuthRequiredDetail" xml:space="preserve">
+    <value>Sign in or provide a valid token/password for the remote gateway.</value>
+  </data>
+  <data name="BridgeGatewaySessionNotConnectedSummary" xml:space="preserve">
+    <value>Gateway session is not connected.</value>
+  </data>
+  <data name="BridgeGatewaySessionNotConnectedDetail" xml:space="preserve">
+    <value>The page is loaded, but the Control UI still reports a connection problem.</value>
+  </data>
+  <data name="BridgeConnectingSummary" xml:space="preserve">
+    <value>Connecting to Gateway...</value>
+  </data>
+  <data name="BridgeConnectingDetail" xml:space="preserve">
+    <value>The Control UI is loaded and is still establishing its Gateway session.</value>
+  </data>
+  <data name="BridgeConnectedSummary" xml:space="preserve">
+    <value>Gateway session appears active.</value>
+  </data>
 </root>
