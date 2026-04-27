@@ -104,6 +104,18 @@ Windows 11 usually already includes WebView2 Runtime. Windows 10 users may need 
 - Windows App SDK C# templates
 - .NET 10 SDK
 
+### Dependency Restore Notes
+
+- The solution uses SDK-style projects with `PackageReference`.
+- Repository-local `packages/` folders are not required and can be deleted safely.
+- A solution-level `[Directory.Build.props](/C:/Users/Zen/Repo/Codings/Claw_winui3/Directory.Build.props)` enables `RestorePackagesConfig=true` so full Visual Studio / MSBuild builds still auto-restore if a future `packages.config` project is added.
+- The expected workflow after clearing local caches is simply:
+
+```powershell
+dotnet restore OpenClaw.sln
+dotnet build OpenClaw.sln
+```
+
 ---
 
 ## Getting Started
@@ -135,6 +147,9 @@ If your OpenClaw Gateway runs on a VPS behind Cloudflare Tunnel:
 - use the public HTTPS Control UI URL in OpenClaw Manager
 - do not use the raw Gateway WebSocket URL
 - make sure the same public origin is listed in `gateway.controlUi.allowedOrigins`
+- if you use `gateway.auth.mode: "trusted-proxy"`, make sure identity headers are forwarded on both HTTP requests and WebSocket upgrades
+- do not mix trusted-proxy mode with shared token auth unless upstream explicitly documents that combination as supported
+- avoid same-host loopback reverse proxies for trusted-proxy mode; use token/password auth there instead
 - make sure the tunnel or reverse proxy preserves the original host and scheme
 
 If the page loads but OpenClaw reports origin rejection, check the exact public origin string and proxy forwarding rules first.
@@ -206,7 +221,43 @@ Design principle: remote-first thin shell. The actual OpenClaw runtime lives on 
 
 ## Recent Changes
 
-### v2.1.0 (2026-04-19)
+### v3.0.3 (2026-04-22)
+
+- Kept the shell lightweight by narrowing Hosted UI DOM scanning to auth/origin/pairing/connectivity signals and avoiding broader page-text sweeps.
+- Tuned the default heartbeat, reconnect, and hard-refresh cadence for the Cloudflare Tunnel remote-gateway path so the shell is less aggressive during transient tunnel jitter.
+- Reduced startup and debug-session noise by removing eager string-resource warm-up, caching `CoreWebView2` handles, and de-duplicating high-frequency WebView lifecycle logs.
+
+### v3.0.2 (2026-04-21)
+
+- Fixed Visual Studio solution configuration mappings so the test project now maps cleanly across `x64`, `x86`, and `ARM64` solution platforms without showing unknown project configuration warnings.
+- Reduced startup and background overhead by deferring non-critical warm-up work, pausing hidden-window activity, and tightening WebView recreation scheduling into a single debounced path.
+- Added lightweight runtime observability for WebView recreation, Control UI inspect reuse/coalescing, deferred settings saves, and heartbeat-triggered recovery so diagnostics now expose the recent optimization paths more clearly.
+
+### v3.0.1 (2026-04-21)
+
+- Continued the refactor by splitting `MainWindow` and `SettingsDialog` startup logic into smaller initialization, action, navigation, and theme files without changing existing behavior.
+- Consolidated duplicated window theme and title-bar refresh logic into shared helpers so the main window and settings window now follow the same theme-application pipeline.
+- Fixed an initialization-order null reference in `ShellSessionCoordinator` by making logger and recovery-option dependencies available before `AttachAsync()` runs.
+- Fixed the window-shell split so the new partial entry files compile cleanly and the main window, settings window, and About version display stay in sync at `3.0.1`.
+
+### v3.0.0 (2026-04-21)
+
+- Refactored shared window theme and native frame refresh logic into reusable helpers to reduce duplicate patch-style fixes across the main window and settings window.
+- Split reusable command, indicator, and app metadata types out of large view model files to make responsibilities clearer and future maintenance safer.
+- Consolidated main window environment selection and UI-thread update flows so behavior stays the same while the code path is easier to reason about.
+
+### v2.1.4 (2026-04-20)
+
+- Added a top-right latency badge for the active Control UI endpoint.
+- Increased latency refresh cadence from 3 seconds to 1 second.
+- Reduced transient blank latency readings by retaining the most recent successful ping value when a probe briefly misses.
+
+### v2.1.3 (2026-04-20)
+
+- Fixed the Settings window so reopening it immediately resyncs the current app theme before the window is shown again.
+- Replaced the title bar refresh resize hack with a non-geometry non-client refresh path based on native frame invalidation, redraw, and DWM flush.
+
+### v2.1.2 (2026-04-19)
 
 - Unified heartbeat settings so runtime behavior now respects the configured enable flag and reconnect thresholds.
 - Added settings normalization so legacy `heartbeatIntervalSeconds` values migrate cleanly into the newer heartbeat settings object.

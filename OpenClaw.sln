@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.0.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenClaw", "src\OpenClaw\OpenClaw.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenClaw.Tests", "tests\OpenClaw.Tests\OpenClaw.Tests.csproj", "{B2C3D4E5-F607-8901-BCDE-F23456789012}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -33,6 +35,18 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|ARM64.ActiveCfg = Release|ARM64
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|ARM64.Build.0 = Release|ARM64
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|ARM64.Deploy.0 = Release|ARM64
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Debug|x64.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Release|x64.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Release|x64.Build.0 = Release|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Debug|x86.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Release|x86.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Release|x86.Build.0 = Release|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F607-8901-BCDE-F23456789012}.Release|ARM64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
