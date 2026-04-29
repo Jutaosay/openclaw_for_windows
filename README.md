@@ -55,6 +55,7 @@ It is best suited for users who:
 Claw_winui3/
 |-- NuGet.config
 |-- OpenClaw.sln
+|-- DEVELOPMENT_NOTES.md
 |-- README.md
 `-- src/OpenClaw/
     |-- OpenClaw.csproj
@@ -115,6 +116,10 @@ Windows 11 usually already includes WebView2 Runtime. Windows 10 users may need 
 dotnet restore OpenClaw.sln
 dotnet build OpenClaw.sln
 ```
+
+### Development Notes
+
+See [DEVELOPMENT_NOTES.md](DEVELOPMENT_NOTES.md) for lessons learned from native window chrome, theme synchronization, and other maintenance-sensitive areas.
 
 ---
 
@@ -220,6 +225,12 @@ Design principle: remote-first thin shell. The actual OpenClaw runtime lives on 
 ---
 
 ## Recent Changes
+
+### v3.0.4 (2026-04-29)
+
+- Fixed the main window top-edge artifact by removing the XAML edge cover workaround and explicitly syncing the WinUI title bar, DWM caption, and DWM border colors.
+- Updated theme-change handling so `ActualThemeChanged` uses the full native frame refresh path instead of only repainting managed title-bar content.
+- Synced app, assembly, file, manifest, and About dialog version metadata to `3.0.4`.
 
 ### v3.0.3 (2026-04-22)
 
