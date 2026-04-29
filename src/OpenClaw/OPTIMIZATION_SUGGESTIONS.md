@@ -3,6 +3,15 @@
 > 基于对 `src/OpenClaw` 全量源码（50+ 源文件、6 个代码层）的深度审查，按优先级分类列出可执行的优化建议。
 > 本版新增 Cloudflare Tunnel 专项分析与多项深层问题发现。
 
+## 本轮 Review 校准（2026-04-28）
+
+本轮代码 review 新增 4 条 P2 级别建议，已落实到下文对应章节：
+
+- `WebViewService.InitializeAsync` 仍通过 `WEBVIEW2_USER_DATA_FOLDER` 设置 WebView2 profile，已补充到 [1.2](#112-webview2-userdatafolder-改用显式-environment-创建)。
+- `ShellSessionCoordinator.Events` 中服务事件入口仍存在 `async void` 风险，已补充到 [4.1](#41-async-void-事件处理器改为-async-task)。
+- `ControlUiLatencyService.Stop()` 停止后可能让 UI 残留旧延迟值，新增 [5.7](#57-controluilatencyservicestop-发布-unknown-状态)。
+- 版本号实际分散在 `OpenClaw.csproj`、`app.manifest`、`Package.appxmanifest`、`AppMetadata.cs` 4 处，已校正 [7.1](#71-版本号一致性)。
+
 ---
 
 ## 目录
@@ -35,6 +44,7 @@
   - [5.4 LoggingService Dispose 超时调整](#54-loggingservice-dispose-超时调整)
   - [5.5 消除魔法数字](#55-消除魔法数字)
   - [5.6 Navigation 自动重试潜在死循环](#56-navigation-自动重试潜在死循环)
+  - [5.7 ControlUiLatencyService.Stop 发布 Unknown 状态](#57-controluilatencyservicestop-发布-unknown-状态)
 - [六、安全加固（中优先级）](#六安全加固中优先级)
   - [6.1 配置敏感信息加密](#61-配置敏感信息加密)
   - [6.2 WebView2 脚本执行安全边界](#62-webview2-脚本执行安全边界)
@@ -141,6 +151,10 @@ await _webView.EnsureCoreWebView2Async();
 ```
 
 这是进程级别的设置，如果未来需要同时管理多个 WebView2 实例（如多环境并行），会产生竞态条件。
+
+**本轮 Review 补充**
+
+当前代码虽然只有单一主 WebView 顺序初始化，但 `WEBVIEW2_USER_DATA_FOLDER` 仍是进程级状态。后续只要引入并行 WebView、预加载、设置页预览、测试宿主或多窗口，就可能出现 profile 串用。该项应优先确认当前 WinUI/WebView2 SDK 是否支持 per-control/per-environment 的 `CoreWebView2Environment` 创建方式，并尽快移除全局环境变量依赖。
 
 **优化方案**
 
@@ -702,6 +716,10 @@ private async void OnAboutClick(object sender, RoutedEventArgs e)
 - 无法等待完成，测试困难
 - 在恢复操作中如果抛出异常，整个应用可能崩溃
 - 对话框/窗口操作中 `await` 失败时异常直接抛出到消息循环
+
+**本轮 Review 补充**
+
+`ShellSessionCoordinator.Events.cs` 中的 `OnEventGapDetected` 和 `OnHeartbeatFailed` 不是普通 UI click handler，而是恢复协调器的服务事件入口。它们会触发 reconnect、soft resync、hard refresh 等关键路径。当前内部实现已有局部 try-catch，但事件入口仍是 `async void`，未来如果新增前置/后置逻辑或遗漏异常处理，异常会直接进入全局异常链。建议将这两个入口优先改为带异常观察的 fire-and-forget helper，或把事件模型升级为 `Func<T, Task>`。
 
 **优化方案**
 
@@ -1336,6 +1354,59 @@ if (_retryCount < MaxRetries)
 
 ---
 
+### 5.7 ControlUiLatencyService.Stop 发布 Unknown 状态
+
+**现状问题**
+
+`ControlUiLatencyService.Stop()` 会清空内部状态并释放 timer/CTS，但不会向订阅方发布一次 `ControlUiLatencySnapshot.Unknown`：
+
+```csharp
+public void Stop()
+{
+    _currentUrl = null;
+    _currentHost = null;
+    _lastSuccessSnapshot = ControlUiLatencySnapshot.Unknown;
+    _lastPublishedSnapshot = ControlUiLatencySnapshot.Unknown;
+    // ...
+}
+```
+
+`MainViewModel.RefreshResourceScheduling()` 在窗口隐藏、WebView 未初始化、环境为空时会调用 `_latencyService.Stop()`。由于 UI 没有收到 Unknown snapshot，顶部 latency badge 可能继续显示最后一次成功或 stale 的延迟值，造成“已经停止探测但 UI 仍像在线”的误导。
+
+**优化方案**
+
+方案 A：`Stop()` 在释放资源前或状态重置后发布 Unknown：
+
+```csharp
+public void Stop()
+{
+    // cancel/dispose...
+    _currentUrl = null;
+    _currentHost = null;
+    _lastSuccessSnapshot = ControlUiLatencySnapshot.Unknown;
+    PublishIfChanged(ControlUiLatencySnapshot.Unknown);
+}
+```
+
+方案 B：保持 service 纯粹，由 `MainViewModel.RefreshResourceScheduling()` 在调用 `Stop()` 后显式重置：
+
+```csharp
+_latencyService.Stop();
+LatencySummaryText = DefaultLatencySummary;
+LatencySummaryBrush = NeutralBrush;
+```
+
+更推荐方案 A，因为所有调用方都能获得一致的“停止即 Unknown”语义。
+
+**预期收益**
+- 避免隐藏窗口、未初始化、切换环境时残留旧延迟值
+- 让 latency badge 与真实探测状态一致
+- 降低 UI 误导，特别是 Tunnel 抖动和后台恢复场景
+
+**工作量**：极低
+
+---
+
 ## 六、安全加固（中优先级）
 
 ### 6.1 配置敏感信息加密
@@ -1408,18 +1479,19 @@ private void RunOnUiThread(Action action)
 
 ### 7.1 版本号一致性
 
-`app.manifest` 中版本是 `3.0.1.0`，而 `OpenClaw.csproj` 中是 `3.0.3.0`。此外，`AppMetadata.cs` 中硬编码了：
+`app.manifest` 和 `Package.appxmanifest` 中版本是 `3.0.1.0`，而 `OpenClaw.csproj` 中是 `3.0.3.0`。此外，`AppMetadata.cs` 中仍保留硬编码 fallback：
 
 ```csharp
-public static string CurrentVersion => "3.0.3";
+public const string CurrentVersion = "3.0.3";
 ```
 
-这意味着版本号在 **3 个位置** 独立维护：
+这意味着版本号在 **4 个位置** 独立维护：
 - `OpenClaw.csproj` — `<Version>3.0.3.0</Version>`
 - `app.manifest` — `<assemblyIdentity version="3.0.1.0">`
+- `Package.appxmanifest` — `<Identity Version="3.0.1.0">`
 - `AppMetadata.cs` — `CurrentVersion = "3.0.3"`
 
-任何一次版本发布都需要同步修改 3 处，极易遗漏。
+任何一次版本发布都需要同步修改 4 处，极易遗漏，并可能导致 About 显示、安装包身份、程序集版本和 manifest 声明互相不一致。
 
 **优化方案**：
 
@@ -1443,8 +1515,13 @@ public static string CurrentVersion => "3.0.3";
 `AppMetadata.cs` 改为读取程序集版本：
 
 ```csharp
-public static string CurrentVersion =>
-    typeof(App).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+public static string GetDisplayVersion()
+{
+    var version = typeof(App).Assembly.GetName().Version;
+    return version is not null
+        ? $"{version.Major}.{version.Minor}.{version.Build}"
+        : "unknown";
+}
 ```
 
 **工作量**：极低
@@ -1673,7 +1750,8 @@ private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
 | 5.3 | HttpClient 优化 | 低 | 低 |
 | 5.4 | LoggingService 超时 | 低 | 低 |
 | 5.5 | 消除魔法数字 (MainWindow 20+ + WindowFrameHelper 12+) | 低 | 极低 |
-| 7.1 | 版本号一致性 (3 处统一) | 极低 | 极低 |
+| 5.7 | Latency Stop 发布 Unknown 状态 | 极低 | 极低 |
+| 7.1 | 版本号一致性 (4 处统一) | 极低 | 极低 |
 | 7.2 | StringResources 线程安全 + 验证 | 极低 | 极低 |
 | 7.3 | 异常处理规范化 | 低 | 极低 |
 | 7.6 | App 冗余字段清理 | 极低 | 极低 |
@@ -1710,12 +1788,12 @@ private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
 | 维度 | 评分 | 说明 |
 |------|------|------|
 | 架构设计 | 8/10 | 分层清晰，partial class 拆分合理；但依赖注入缺失，静态服务定位器阻碍可测试性 |
-| 代码规范 | 7/10 | 风格一致；但 async void 达 8 处、魔法数字 32+（MainWindow 20+、WindowFrameHelper 12+）、版本号 3 处硬编码、MainViewModel 手动 INotifyPropertyChanged 样板代码 200+ 行 |
+| 代码规范 | 7/10 | 风格一致；但 async void 达 8 处、魔法数字 32+（MainWindow 20+、WindowFrameHelper 12+）、版本号 4 处独立维护、MainViewModel 手动 INotifyPropertyChanged 样板代码 200+ 行 |
 | 错误处理 | 6/10 | 覆盖面广但部分过度吞异常，async void 存在崩溃风险，UnhandledException 仅记录日志无用户反馈 |
 | 可测试性 | 6/10 | 静态依赖阻碍单元测试，服务直接 new 无法 mock；MainWindow 直接引用 App.Configuration/Logger |
 | 安全性 | 7/10 | 基本到位，缺少加密和边界校验，JS 转义不完整 |
 | 性能 | 6/10 | 异步设计良好；但 UpdateLayout 强制同步布局、App.Configuration.Save() 阻塞窗口关闭、HeartbeatIndicatorViewModel 频繁创建 SolidColorBrush（430ms 一次）、Tunnel 场景下 DNS TTL 冲突导致假性断连 |
 | 可维护性 | 7/10 | 文件拆分合理；但 JS 内联影响维护，魔法数字分散，CommunityToolkit.Mvvm 已引入但未充分利用，3 处内存泄漏风险（rootElement 事件、SettingsDialog 状态、WebView2 COM 对象） |
-| 资源管理 | 5/10 | MainViewModel.Dispose() 正确实现但从未被调用，WebView2 COM 对象释放依赖 GC，HeartbeatIndicatorViewModel 频繁创建 SolidColorBrush |
+| 资源管理 | 5/10 | MainViewModel.Dispose() 正确实现但从未被调用，WebView2 COM 对象释放依赖 GC，Latency Stop 未发布 Unknown 状态，HeartbeatIndicatorViewModel 频繁创建 SolidColorBrush |
 
-**综合评分：6.0/10** — 代码质量处于中等水平。核心优势在于 ShellSessionCoordinator 的适配器模式和恢复状态机设计、分层清晰的架构思路。主要短板：（1）8 个 async void 实例带来的异常安全性风险；（2）CommunityToolkit.Mvvm 已引入但未充分利用，导致 200+ 行手动样板代码；（3）32+ 魔法数字分散在 MainWindow 和 WindowFrameHelper 中；（4）MainViewModel.Dispose() 实现正确但从未被调用，COM 资源和定时器可能泄漏；（5）HeartbeatIndicatorViewModel 频繁创建 SolidColorBrush 带来的 GC 压力；（6）Cloudflare Tunnel 场景下 DNS TTL 与静态 HttpClient 冲突导致的假性断连；（7）App.Configuration 和 App.Logger 在 ViewModel 层 12+ 处直接引用，耦合紧密；（8）StringResources 线程安全隐患和 UnhandledException 处理薄弱。
+**综合评分：6.0/10** — 代码质量处于中等水平。核心优势在于 ShellSessionCoordinator 的适配器模式和恢复状态机设计、分层清晰的架构思路。主要短板：（1）8 个 async void 实例带来的异常安全性风险；（2）CommunityToolkit.Mvvm 已引入但未充分利用，导致 200+ 行手动样板代码；（3）32+ 魔法数字分散在 MainWindow 和 WindowFrameHelper 中；（4）MainViewModel.Dispose() 实现正确但从未被调用，COM 资源和定时器可能泄漏；（5）HeartbeatIndicatorViewModel 频繁创建 SolidColorBrush 带来的 GC 压力；（6）Cloudflare Tunnel 场景下 DNS TTL 与静态 HttpClient 冲突导致的假性断连；（7）App.Configuration 和 App.Logger 在 ViewModel 层 12+ 处直接引用，耦合紧密；（8）版本号 4 处独立维护；（9）Latency Stop 未发布 Unknown 状态导致 UI 可能残留旧探测值；（10）StringResources 线程安全隐患和 UnhandledException 处理薄弱。

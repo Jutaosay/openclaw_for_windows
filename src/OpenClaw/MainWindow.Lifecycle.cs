@@ -89,7 +89,7 @@ public sealed partial class MainWindow
         }
 
         _hasPerformedInitialTitleBarRefresh = true;
-        WindowFrameHelper.QueueFrameRefresh(this, DispatcherQueue, RefreshTitleBarVisualState);
+        WindowFrameHelper.QueueFrameRefresh(this, DispatcherQueue, RefreshTitleBarVisualState, redrawWindow: true);
     }
 
     private void UpdateWindowVisibilityState()
@@ -122,7 +122,16 @@ public sealed partial class MainWindow
 
     private void OnRootActualThemeChanged(FrameworkElement sender, object args)
     {
-        UpdateTitleBarColors(sender.ActualTheme);
+        _isDarkThemeActive = WindowFrameHelper.ApplyActualTheme(
+            this,
+            sender.ActualTheme,
+            _isDarkThemeActive,
+            UpdateTitleBarColors,
+            DispatcherQueue,
+            RefreshTitleBarVisualState,
+            redrawWindow: true,
+            useSizeNudgeOnDarkTransition: true,
+            includeTrailingRefresh: true);
     }
 
     private void OnWindowHidden()

@@ -91,6 +91,7 @@ public sealed partial class SettingsDialog
             ButtonPressedForegroundColor = palette.ForegroundColor,
             ButtonPressedBackgroundColor = palette.ButtonPressedBackgroundColor,
             NativeBackgroundColor = palette.BackgroundColor,
+            NativeBorderColor = palette.BackgroundColor,
             NativeTextColor = palette.ForegroundColor,
         });
     }

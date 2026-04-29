@@ -59,6 +59,7 @@ public sealed partial class MainWindow
             UpdateTitleBarColors,
             DispatcherQueue,
             RefreshTitleBarVisualState,
+            redrawWindow: true,
             useSizeNudgeOnDarkTransition: true,
             includeTrailingRefresh: true);
     }
@@ -98,9 +99,9 @@ public sealed partial class MainWindow
         {
             IsDark = palette.IsDark,
             ForegroundColor = palette.ForegroundColor,
-            BackgroundColor = Colors.Transparent,
+            BackgroundColor = currentCaptionColor,
             InactiveForegroundColor = palette.InactiveForegroundColor,
-            InactiveBackgroundColor = Colors.Transparent,
+            InactiveBackgroundColor = inactiveBackground,
             ButtonForegroundColor = currentForeground,
             ButtonBackgroundColor = Colors.Transparent,
             ButtonInactiveForegroundColor = palette.InactiveForegroundColor,
@@ -110,11 +111,12 @@ public sealed partial class MainWindow
             ButtonPressedForegroundColor = palette.ForegroundColor,
             ButtonPressedBackgroundColor = palette.ButtonPressedBackgroundColor,
             NativeBackgroundColor = currentCaptionColor,
+            NativeBorderColor = currentCaptionColor,
             NativeTextColor = currentForeground,
         });
 
         UpdateTitleBarContentState(currentForeground, _isWindowActive);
-        TopEdgeCover.Background = new SolidColorBrush(currentCaptionColor);
+        AppTitleBar.Background = new SolidColorBrush(currentCaptionColor);
     }
 
     private void UpdateTitleBarContentState(Windows.UI.Color foregroundColor, bool isWindowActive)

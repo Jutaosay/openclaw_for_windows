@@ -18,7 +18,6 @@ internal static class WindowFrameHelper
     private const int DwmWindowAttributeBorderColor = 34;
     private const int DwmWindowAttributeCaptionColor = 35;
     private const int DwmWindowAttributeTextColor = 36;
-    private const uint DwmColorNone = 0xFFFFFFFE;
     private const uint SetWindowPosNoMove = 0x0002;
     private const uint SetWindowPosNoSize = 0x0001;
     private const uint SetWindowPosNoZOrder = 0x0004;
@@ -124,7 +123,12 @@ internal static class WindowFrameHelper
         titleBar.ButtonPressedForegroundColor = colors.ButtonPressedForegroundColor;
         titleBar.ButtonPressedBackgroundColor = colors.ButtonPressedBackgroundColor;
 
-        ApplyNativeWindowTheme(window, colors.NativeBackgroundColor, colors.NativeTextColor, colors.IsDark);
+        ApplyNativeWindowTheme(
+            window,
+            colors.NativeBackgroundColor,
+            colors.NativeBorderColor,
+            colors.NativeTextColor,
+            colors.IsDark);
     }
 
     public static void QueueFrameRefresh(
@@ -174,6 +178,7 @@ internal static class WindowFrameHelper
     public static void ApplyNativeWindowTheme(
         Window window,
         Windows.UI.Color backgroundColor,
+        Windows.UI.Color borderColor,
         Windows.UI.Color textColor,
         bool isDark)
     {
@@ -184,12 +189,12 @@ internal static class WindowFrameHelper
         }
 
         var useDarkMode = isDark ? 1 : 0;
-        var borderColor = DwmColorNone;
+        var nativeBorderColor = ToColorRef(borderColor);
         var captionColor = ToColorRef(backgroundColor);
         var nativeTextColor = ToColorRef(textColor);
 
         DwmSetWindowAttribute(hwnd, DwmWindowAttributeUseImmersiveDarkMode, ref useDarkMode, sizeof(int));
-        DwmSetWindowAttribute(hwnd, DwmWindowAttributeBorderColor, ref borderColor, sizeof(uint));
+        DwmSetWindowAttribute(hwnd, DwmWindowAttributeBorderColor, ref nativeBorderColor, sizeof(uint));
         DwmSetWindowAttribute(hwnd, DwmWindowAttributeCaptionColor, ref captionColor, sizeof(uint));
         DwmSetWindowAttribute(hwnd, DwmWindowAttributeTextColor, ref nativeTextColor, sizeof(uint));
     }
@@ -367,5 +372,6 @@ internal readonly record struct WindowTitleBarColors
     public Windows.UI.Color ButtonPressedForegroundColor { get; init; }
     public Windows.UI.Color ButtonPressedBackgroundColor { get; init; }
     public Windows.UI.Color NativeBackgroundColor { get; init; }
+    public Windows.UI.Color NativeBorderColor { get; init; }
     public Windows.UI.Color NativeTextColor { get; init; }
 }

@@ -9,7 +9,7 @@ namespace OpenClaw.Helpers;
 /// </summary>
 internal static class AppMetadata
 {
-    public const string CurrentVersion = "3.0.3";
+    public const string CurrentVersion = "3.0.4";
 
     public static string GetDisplayVersion()
     {

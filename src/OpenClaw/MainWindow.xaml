@@ -389,12 +389,5 @@
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        Text="{x:Bind ViewModel.SelectedEnvironmentName, Mode=OneWay}" />
         </Grid>
-
-        <Border x:Name="TopEdgeCover"
-                Grid.RowSpan="6"
-                Height="1"
-                VerticalAlignment="Top"
-                Background="{ThemeResource LayerFillColorDefaultBrush}"
-                IsHitTestVisible="False" />
     </Grid>
 </Window>
