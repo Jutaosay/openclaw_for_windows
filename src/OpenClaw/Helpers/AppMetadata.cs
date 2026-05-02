@@ -9,13 +9,11 @@ namespace OpenClaw.Helpers;
 /// </summary>
 internal static class AppMetadata
 {
-    public const string CurrentVersion = "3.0.4";
-
     public static string GetDisplayVersion()
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version;
         return version is not null
             ? $"{version.Major}.{version.Minor}.{version.Build}"
-            : CurrentVersion;
+            : "0.0.0";
     }
 }

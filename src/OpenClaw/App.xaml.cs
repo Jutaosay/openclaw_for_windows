@@ -25,14 +25,14 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Gets the singleton <see cref="ConfigurationService"/> instance.
-    /// </summary>
-    public static ConfigurationService Configuration { get; } = new();
-
-    /// <summary>
     /// Gets the singleton <see cref="LoggingService"/> instance.
     /// </summary>
     public static LoggingService Logger { get; } = new();
+
+    /// <summary>
+    /// Gets the singleton <see cref="ConfigurationService"/> instance.
+    /// </summary>
+    public static ConfigurationService Configuration { get; } = new(Logger);
 
     /// <summary>
     /// Gets the main application window.

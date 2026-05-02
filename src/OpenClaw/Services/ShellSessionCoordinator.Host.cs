@@ -90,6 +90,9 @@ public sealed partial class ShellSessionCoordinator
         _reconnectAttempts = 0;
         _softResyncAttempts = 0;
         _hardRefreshAttempts = 0;
+        _totalReconnectAttempts = 0;
+        _totalSoftResyncAttempts = 0;
+        _totalHardRefreshAttempts = 0;
         _recentGapCount = 0;
         _recoveryState = RecoveryState.Connecting;
         _lastRecoveryStartedAt = null;

@@ -48,7 +48,7 @@ public class WebViewService
     private int _heartbeatIntervalSeconds;
     private int _heartbeatFailureThreshold = DefaultHeartbeatFailureThreshold;
     private int _heartbeatConnectingThreshold = DefaultHeartbeatConnectingThreshold;
-    private static readonly TimeSpan HeartbeatReloadCooldown = TimeSpan.FromSeconds(75);
+    private static readonly TimeSpan DefaultHeartbeatReloadCooldown = TimeSpan.FromSeconds(75);
     private static readonly HttpClient HeartbeatHttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
     private DateTimeOffset _lastHeartbeatReloadAt = DateTimeOffset.MinValue;
     private string? _lastStartHeartbeatKey;
@@ -231,7 +231,7 @@ public class WebViewService
     /// <summary>
     /// Sends the in-app stop command when possible, falling back to stopping navigation.
     /// </summary>
-    public async void Stop()
+    public async Task StopAsync()
     {
         var coreWebView = GetCoreWebView();
         if (coreWebView is null) return;
@@ -851,10 +851,11 @@ public class WebViewService
 
     private bool TryScheduleHeartbeatReload(string message, bool preserveConnectingCounter = false)
     {
+        var heartbeatReloadCooldown = GetHeartbeatReloadCooldown();
         var elapsed = DateTimeOffset.UtcNow - _lastHeartbeatReloadAt;
-        if (elapsed < HeartbeatReloadCooldown)
+        if (elapsed < heartbeatReloadCooldown)
         {
-            var remaining = HeartbeatReloadCooldown - elapsed;
+            var remaining = heartbeatReloadCooldown - elapsed;
             App.Logger.Warning($"Heartbeat auto-refresh suppressed for another {Math.Ceiling(remaining.TotalSeconds)}s to avoid reverse-proxy thrash.");
             _heartbeatFailureCount = _heartbeatFailureThreshold - 1;
 
@@ -875,6 +876,12 @@ public class WebViewService
         // Stop heartbeat; coordinator-driven recovery will restart it after the session stabilizes.
         StopHeartbeat();
         return true;
+    }
+
+    private static TimeSpan GetHeartbeatReloadCooldown()
+    {
+        var seconds = App.Configuration.Settings.RecoveryPolicy.HardRefreshCooldownSeconds;
+        return TimeSpan.FromSeconds(Math.Max(0, seconds));
     }
 
     private void LogHeartbeatObservation(HeartbeatProbeResult result)
@@ -1419,82 +1426,3 @@ public class WebViewService
 /// <summary>
 /// Represents the connection/loading state of the WebView2 session.
 /// </summary>
-public enum ConnectionState
-{
-    Offline,
-    Loading,
-    GatewayConnecting,
-    Connected,
-    Reconnecting,
-    AuthFailed,
-    Error,
-}
-
-public enum HeartbeatProbeStatus
-{
-    Healthy,
-    SessionBlocked,
-    Connecting,
-    Failure,
-}
-
-public sealed record HeartbeatProbeResult(HeartbeatProbeStatus Status, string Message)
-{
-    public static HeartbeatProbeResult Healthy(string message) => new(HeartbeatProbeStatus.Healthy, message);
-    public static HeartbeatProbeResult SessionBlocked(string message) => new(HeartbeatProbeStatus.SessionBlocked, message);
-    public static HeartbeatProbeResult Connecting(string message) => new(HeartbeatProbeStatus.Connecting, message);
-    public static HeartbeatProbeResult Failure(string message) => new(HeartbeatProbeStatus.Failure, message);
-}
-
-public enum ControlUiPhase
-{
-    Unknown,
-    Loading,
-    PageLoaded,
-    GatewayConnecting,
-    Connected,
-    AuthRequired,
-    PairingRequired,
-    OriginRejected,
-    GatewayError,
-    Unavailable,
-}
-
-public sealed record ControlUiProbeSnapshot(
-    ControlUiPhase Phase,
-    string Summary,
-    string Detail,
-    string Url,
-    bool ShellDetected,
-    bool IsBusy,
-    bool InputFocused,
-    string WorkState,
-    string CurrentModel)
-{
-    public static ControlUiProbeSnapshot Unknown { get; } =
-        new(ControlUiPhase.Unknown, string.Empty, string.Empty, string.Empty, false, false, false, string.Empty, string.Empty);
-
-    public bool IsIssue => Phase is ControlUiPhase.AuthRequired
-        or ControlUiPhase.PairingRequired
-        or ControlUiPhase.OriginRejected
-        or ControlUiPhase.GatewayError;
-
-    public bool IsTerminal => Phase is ControlUiPhase.Connected
-        or ControlUiPhase.AuthRequired
-        or ControlUiPhase.PairingRequired
-        or ControlUiPhase.OriginRejected
-        or ControlUiPhase.GatewayError;
-
-    public string DetailOrSummary => string.IsNullOrWhiteSpace(Detail) ? Summary : Detail;
-
-    public string IssueKey => $"{Phase}:{DetailOrSummary}:{Url}";
-
-    public static ControlUiProbeSnapshot Loading(string? url) =>
-        new(ControlUiPhase.Loading, "Page is loading.", string.Empty, url ?? string.Empty, false, false, false, "loading", string.Empty);
-
-    public static ControlUiProbeSnapshot PageLoaded(string? url) =>
-        new(ControlUiPhase.PageLoaded, "Gateway UI loaded.", "Waiting for the hosted Control UI to report its Gateway session state.", url ?? string.Empty, false, false, false, "idle", string.Empty);
-
-    public static ControlUiProbeSnapshot Unavailable(string detail) =>
-        new(ControlUiPhase.Unavailable, "Control UI state is unavailable.", detail, string.Empty, false, false, false, string.Empty, string.Empty);
-}

@@ -129,6 +129,11 @@ public sealed partial class MainWindow
                     VerticalAlignment = VerticalAlignment.Stretch,
                 };
 
+                foreach (var child in WebViewHost.Children.OfType<WebView2>().ToArray())
+                {
+                    child.Close();
+                }
+
                 WebViewHost.Children.Clear();
                 WebViewHost.Children.Add(nextWebView);
 

@@ -10,31 +10,19 @@ public sealed partial class ShellSessionCoordinator
     /// Attaches the coordinator to the required services.
     /// </summary>
     public Task AttachAsync(
-        WebViewService webViewService,
-        HostedUiBridge bridge,
-        RecoveryPolicyOptions? recoveryOptions = null,
-        HeartbeatOptions? heartbeatOptions = null)
-    {
-        return AttachAsync(
-            new ShellSessionWebViewAdapter(webViewService),
-            new ShellSessionBridgeAdapter(bridge),
-            recoveryOptions,
-            heartbeatOptions);
-    }
-
-    internal Task AttachAsync(
         IShellSessionWebView webViewService,
         IShellSessionBridge bridge,
         RecoveryPolicyOptions? recoveryOptions = null,
-        HeartbeatOptions? heartbeatOptions = null)
+        HeartbeatOptions? heartbeatOptions = null,
+        IAppLogger? logger = null)
     {
         DetachServiceSubscriptions();
 
         _webViewService = webViewService;
         _bridge = bridge;
-        _recoveryOptions = recoveryOptions ?? App.Configuration.Settings.RecoveryPolicy;
-        _heartbeatOptions = heartbeatOptions ?? App.Configuration.Settings.Heartbeat;
-        _logger = App.Logger;
+        _recoveryOptions = recoveryOptions ?? _recoveryOptions;
+        _heartbeatOptions = heartbeatOptions ?? _heartbeatOptions;
+        _logger = logger ?? _logger;
 
         AttachServiceSubscriptions();
         _logger.Info("ShellSessionCoordinator attached.");

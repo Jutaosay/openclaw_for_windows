@@ -18,8 +18,13 @@ public sealed class HeartbeatIndicatorViewModel : INotifyPropertyChanged
         get => _fillBrush;
         set
         {
+            if (ReferenceEquals(_fillBrush, value))
+            {
+                return;
+            }
+
             _fillBrush = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FillBrush)));
+            PropertyChanged?.Invoke(this, EventArgsCache.FillBrush);
         }
     }
 
@@ -28,8 +33,19 @@ public sealed class HeartbeatIndicatorViewModel : INotifyPropertyChanged
         get => _fillOpacity;
         set
         {
+            if (Math.Abs(_fillOpacity - value) < double.Epsilon)
+            {
+                return;
+            }
+
             _fillOpacity = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FillOpacity)));
+            PropertyChanged?.Invoke(this, EventArgsCache.FillOpacity);
         }
+    }
+
+    private static class EventArgsCache
+    {
+        public static readonly PropertyChangedEventArgs FillBrush = new(nameof(FillBrush));
+        public static readonly PropertyChangedEventArgs FillOpacity = new(nameof(FillOpacity));
     }
 }

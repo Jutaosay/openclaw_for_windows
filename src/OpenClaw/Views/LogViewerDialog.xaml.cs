@@ -29,13 +29,12 @@ public sealed partial class LogViewerDialog : ContentDialog
 
             if (File.Exists(logFile))
             {
-                var content = File.ReadAllText(logFile);
-                // Show last 500 lines max
-                var lines = content.Split('\n');
-                if (lines.Length > 500)
+                var tail = LogFileUtilities.ReadLastLines(logFile, LogFileUtilities.DefaultTailLineCount);
+                var content = string.Join(Environment.NewLine, tail.Lines);
+                if (tail.WasTruncated)
                 {
-                    LogContent.Text = string.Format(StringResources.LogShowingLastLinesFormat, lines.Length) + "\n\n"
-                        + string.Join('\n', lines.Skip(lines.Length - 500));
+                    LogContent.Text = string.Format(StringResources.LogShowingLastLinesFormat, tail.TotalLineCount) + Environment.NewLine + Environment.NewLine
+                        + content;
                 }
                 else
                 {

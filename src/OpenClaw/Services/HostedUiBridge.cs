@@ -925,19 +925,3 @@ public sealed class HostedUiBridge
 /// <summary>
 /// Event args for session ready event.
 /// </summary>
-public record SessionReadyEventArgs(
-    string DetectedAt,
-    string Model,
-    string Uri
-);
-
-/// <summary>
-/// Event args for event gap detection.
-/// </summary>
-public record EventGapEventArgs(
-    long ExpectedSeq,
-    long GotSeq,
-    string? LastStateVersion,
-    string? CurrentStateVersion,
-    string DetectedAt
-);

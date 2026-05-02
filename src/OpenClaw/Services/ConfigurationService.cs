@@ -1,6 +1,7 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using System.Text.Json;
+using OpenClaw.Helpers;
 using OpenClaw.Models;
 
 namespace OpenClaw.Services;
@@ -11,16 +12,44 @@ namespace OpenClaw.Services;
 /// </summary>
 public class ConfigurationService
 {
-    private static readonly string AppDataFolder =
+    private static readonly string DefaultAppDataFolder =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OpenClaw");
 
-    private static readonly string SettingsFilePath =
-        Path.Combine(AppDataFolder, "settings.json");
+    private readonly string _appDataFolder;
+    private readonly string _settingsFilePath;
+    private readonly IAppLogger _logger;
+    private readonly TimeSpan _deferredSaveDelay;
+    private readonly Action<string, string> _writeAllText;
 
     private readonly object _lock = new();
     private int _saveQueued;
+    private int _saveVersion;
     private int _deferredSaveRequests;
     private int _deferredSaveCoalescedRequests;
+
+    public ConfigurationService()
+        : this(DefaultAppDataFolder, NullAppLogger.Instance)
+    {
+    }
+
+    public ConfigurationService(IAppLogger? logger)
+        : this(DefaultAppDataFolder, logger)
+    {
+    }
+
+    public ConfigurationService(
+        string appDataFolder,
+        IAppLogger? logger = null,
+        TimeSpan? deferredSaveDelay = null,
+        Action<string, string>? writeAllText = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(appDataFolder);
+        _appDataFolder = Path.GetFullPath(appDataFolder);
+        _settingsFilePath = Path.Combine(_appDataFolder, "settings.json");
+        _logger = logger ?? NullAppLogger.Instance;
+        _deferredSaveDelay = deferredSaveDelay ?? TimeSpan.FromMilliseconds(250);
+        _writeAllText = writeAllText ?? AtomicFileWriter.WriteAllText;
+    }
 
     /// <summary>
     /// Gets the current application settings.
@@ -40,9 +69,9 @@ public class ConfigurationService
         {
             try
             {
-                if (File.Exists(SettingsFilePath))
+                if (File.Exists(_settingsFilePath))
                 {
-                    var json = File.ReadAllText(SettingsFilePath);
+                    var json = File.ReadAllText(_settingsFilePath);
                     var settings = JsonSerializer.Deserialize(json, AppSettingsJsonContext.Default.AppSettings);
                     if (settings is not null)
                     {
@@ -54,7 +83,7 @@ public class ConfigurationService
             }
             catch (Exception ex)
             {
-                App.Logger.Error($"Failed to load settings: {ex.Message}");
+                _logger.Error($"Failed to load settings: {ex.Message}");
             }
 
             // Create default settings with a sample environment
@@ -86,13 +115,13 @@ public class ConfigurationService
             try
             {
                 NormalizeSettings(Settings);
-                Directory.CreateDirectory(AppDataFolder);
+                Directory.CreateDirectory(_appDataFolder);
                 var json = JsonSerializer.Serialize(Settings, AppSettingsJsonContext.Default.AppSettings);
-                File.WriteAllText(SettingsFilePath, json);
+                _writeAllText(_settingsFilePath, json);
             }
             catch (Exception ex)
             {
-                App.Logger.Error($"Failed to save settings: {ex.Message}");
+                _logger.Error($"Failed to save settings: {ex.Message}");
             }
         }
     }
@@ -100,10 +129,12 @@ public class ConfigurationService
     public void SaveDeferred()
     {
         Interlocked.Increment(ref _deferredSaveRequests);
-        if (Interlocked.Exchange(ref _saveQueued, 1) != 0)
+        Interlocked.Increment(ref _saveVersion);
+
+        if (Interlocked.CompareExchange(ref _saveQueued, 1, 0) != 0)
         {
             Interlocked.Increment(ref _deferredSaveCoalescedRequests);
-            App.Logger.Info("settings.save_deferred.coalesced", new
+            _logger.Info("settings.save_deferred.coalesced", new
             {
                 requests = DeferredSaveRequests,
                 coalesced = DeferredSaveCoalescedRequests
@@ -111,29 +142,41 @@ public class ConfigurationService
             return;
         }
 
-        App.Logger.Info("settings.save_deferred.queued", new
+        _logger.Info("settings.save_deferred.queued", new
         {
             requests = DeferredSaveRequests,
             coalesced = DeferredSaveCoalescedRequests
         });
 
-        Task.Run(async () =>
+        _ = Task.Run(ProcessDeferredSaveQueueAsync);
+    }
+
+    private async Task ProcessDeferredSaveQueueAsync()
+    {
+        while (true)
         {
-            try
+            var versionToFlush = Volatile.Read(ref _saveVersion);
+
+            await Task.Delay(_deferredSaveDelay).ConfigureAwait(false);
+            Save();
+            _logger.Info("settings.save_deferred.flushed", new
             {
-                await Task.Delay(250).ConfigureAwait(false);
-                Save();
-                App.Logger.Info("settings.save_deferred.flushed", new
-                {
-                    requests = DeferredSaveRequests,
-                    coalesced = DeferredSaveCoalescedRequests
-                });
-            }
-            finally
+                requests = DeferredSaveRequests,
+                coalesced = DeferredSaveCoalescedRequests
+            });
+
+            Interlocked.Exchange(ref _saveQueued, 0);
+
+            if (Volatile.Read(ref _saveVersion) == versionToFlush)
             {
-                Interlocked.Exchange(ref _saveQueued, 0);
+                return;
             }
-        });
+
+            if (Interlocked.CompareExchange(ref _saveQueued, 1, 0) != 0)
+            {
+                return;
+            }
+        }
     }
 
     public void FlushDeferredSave()
@@ -144,7 +187,7 @@ public class ConfigurationService
         }
 
         Save();
-        App.Logger.Info("settings.save_deferred.flush_on_shutdown", new
+        _logger.Info("settings.save_deferred.flush_on_shutdown", new
         {
             requests = DeferredSaveRequests,
             coalesced = DeferredSaveCoalescedRequests
@@ -178,7 +221,10 @@ public class ConfigurationService
 
     private static void NormalizeSettings(AppSettings settings, string? rawJson = null)
     {
+        settings.Environments ??= [];
+        settings.RecoveryPolicy ??= new RecoveryPolicyOptions();
         settings.Heartbeat ??= new HeartbeatOptions();
+        settings.Diagnostics ??= new DiagnosticsOptions();
         settings.Heartbeat.IntervalSeconds = Math.Max(0, settings.Heartbeat.IntervalSeconds);
         settings.Heartbeat.FailureThreshold = Math.Max(1, settings.Heartbeat.FailureThreshold);
         settings.Heartbeat.ConnectingThreshold = Math.Max(1, settings.Heartbeat.ConnectingThreshold);

@@ -13,7 +13,7 @@ public sealed partial class ShellSessionCoordinator
 {
     private RecoveryPolicyOptions _recoveryOptions;
     private HeartbeatOptions _heartbeatOptions;
-    private LoggingService _logger;
+    private IAppLogger _logger;
 
     private IShellSessionWebView? _webViewService;
     private IShellSessionBridge? _bridge;
@@ -97,9 +97,9 @@ public sealed partial class ShellSessionCoordinator
 
     public ShellSessionCoordinator()
     {
-        _recoveryOptions = App.Configuration.Settings.RecoveryPolicy;
-        _heartbeatOptions = App.Configuration.Settings.Heartbeat;
-        _logger = App.Logger;
+        _recoveryOptions = new RecoveryPolicyOptions();
+        _heartbeatOptions = new HeartbeatOptions();
+        _logger = NullAppLogger.Instance;
     }
 
     private enum GapRecoveryAction
@@ -109,7 +109,7 @@ public sealed partial class ShellSessionCoordinator
         Reconnect,
     }
 
-    internal void UpdateInstrumentation(
+    public void UpdateInstrumentation(
         int? totalWebViewRecreations = null,
         int? mergedWebViewRecreationRequests = null,
         int? totalControlUiInspectionRequests = null,

@@ -3,6 +3,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
+using OpenClaw.Helpers;
 
 namespace OpenClaw.Services;
 
@@ -10,8 +11,9 @@ namespace OpenClaw.Services;
 /// Provides structured local logging to JSON-lines files.
 /// Log files are stored in %LOCALAPPDATA%\OpenClaw\logs\ and rotated daily.
 /// </summary>
-public class LoggingService
+public class LoggingService : IAppLogger
 {
+    private static readonly TimeSpan LogRetention = TimeSpan.FromDays(14);
     private static readonly string LogFolder =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OpenClaw", "logs");
 
@@ -124,6 +126,8 @@ public class LoggingService
     {
         try
         {
+            DeleteExpiredLogs();
+
             while (true)
             {
                 await _queueSignal.WaitAsync(_writerCts.Token).ConfigureAwait(false);
@@ -139,6 +143,18 @@ public class LoggingService
         finally
         {
             FlushPendingLines();
+        }
+    }
+
+    private static void DeleteExpiredLogs()
+    {
+        try
+        {
+            LogFileUtilities.DeleteExpiredLogs(LogFolder, LogRetention, DateTimeOffset.UtcNow);
+        }
+        catch
+        {
+            // Log retention is best-effort and should not prevent writing current logs.
         }
     }
 

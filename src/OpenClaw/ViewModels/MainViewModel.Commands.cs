@@ -11,7 +11,7 @@ public partial class MainViewModel
     {
         OpenSettingsCommand = new SimpleCommand(() => OpenSettingsRequested?.Invoke());
         ReloadCommand = new SimpleCommand(OnReload);
-        StopCommand = new SimpleCommand(OnStop);
+        StopCommand = new AsyncCommand(OnStopAsync, OnAsyncCommandFailed);
         RetryCommand = new SimpleCommand(OnRetry);
         DevToolsCommand = new SimpleCommand(OnDevTools);
         RunDiagnosticsCommand = new AsyncCommand(OnRunDiagnosticsAsync, OnAsyncCommandFailed);
@@ -34,9 +34,9 @@ public partial class MainViewModel
         _webViewService.Reload();
     }
 
-    private void OnStop()
+    private async Task OnStopAsync()
     {
-        _webViewService.Stop();
+        await _webViewService.StopAsync();
     }
 
     private void OnDevTools()

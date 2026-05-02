@@ -1,6 +1,6 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
-using System.Net.NetworkInformation;
+using System.Diagnostics;
 
 namespace OpenClaw.Services;
 
@@ -10,14 +10,35 @@ namespace OpenClaw.Services;
 public sealed class ControlUiLatencyService : IDisposable
 {
     private const int ProbeIntervalSeconds = 3;
-    private const int PingTimeoutMilliseconds = 2000;
 
+    private readonly HttpClient _probeHttpClient;
+    private readonly TimeSpan _probeInterval;
+    private readonly bool _disposeHttpClient;
     private PeriodicTimer? _probeTimer;
     private CancellationTokenSource? _probeCts;
+    private Task? _probeTask;
     private string? _currentHost;
     private string? _currentUrl;
     private ControlUiLatencySnapshot _lastSuccessSnapshot = ControlUiLatencySnapshot.Unknown;
     private ControlUiLatencySnapshot _lastPublishedSnapshot = ControlUiLatencySnapshot.Unknown;
+
+    public ControlUiLatencyService()
+        : this(new HttpClient { Timeout = TimeSpan.FromSeconds(5) }, TimeSpan.FromSeconds(ProbeIntervalSeconds), disposeHttpClient: true)
+    {
+    }
+
+    public ControlUiLatencyService(HttpMessageHandler messageHandler, TimeSpan? probeInterval = null)
+        : this(new HttpClient(messageHandler) { Timeout = TimeSpan.FromSeconds(5) }, probeInterval ?? TimeSpan.FromSeconds(ProbeIntervalSeconds), disposeHttpClient: true)
+    {
+    }
+
+    private ControlUiLatencyService(HttpClient probeHttpClient, TimeSpan probeInterval, bool disposeHttpClient)
+    {
+        ArgumentNullException.ThrowIfNull(probeHttpClient);
+        _probeHttpClient = probeHttpClient;
+        _probeInterval = probeInterval;
+        _disposeHttpClient = disposeHttpClient;
+    }
 
     /// <summary>
     /// Raised whenever a new latency snapshot is available.
@@ -29,7 +50,8 @@ public sealed class ControlUiLatencyService : IDisposable
     /// </summary>
     public void Start(string? controlUiUrl)
     {
-        var host = TryGetPingHost(controlUiUrl);
+        var probeUri = TryGetProbeUri(controlUiUrl);
+        var host = TryGetProbeHost(probeUri);
         if (_probeCts is not null &&
             !_probeCts.IsCancellationRequested &&
             string.Equals(_currentUrl, controlUiUrl, StringComparison.OrdinalIgnoreCase) &&
@@ -45,15 +67,15 @@ public sealed class ControlUiLatencyService : IDisposable
         _lastSuccessSnapshot = ControlUiLatencySnapshot.Unknown;
         _lastPublishedSnapshot = ControlUiLatencySnapshot.Unknown;
 
-        if (string.IsNullOrWhiteSpace(host))
+        if (probeUri is null || string.IsNullOrWhiteSpace(host))
         {
             PublishIfChanged(ControlUiLatencySnapshot.Unknown);
             return;
         }
 
         _probeCts = new CancellationTokenSource();
-        _probeTimer = new PeriodicTimer(TimeSpan.FromSeconds(ProbeIntervalSeconds));
-        _ = RunProbeLoopAsync(host, _probeCts.Token);
+        _probeTimer = new PeriodicTimer(_probeInterval);
+        _probeTask = RunProbeLoopAsync(probeUri, host, _probeCts.Token);
     }
 
     /// <summary>
@@ -80,23 +102,27 @@ public sealed class ControlUiLatencyService : IDisposable
     public void Dispose()
     {
         Stop();
+        if (_disposeHttpClient)
+        {
+            _probeHttpClient.Dispose();
+        }
     }
 
-    private async Task RunProbeLoopAsync(string host, CancellationToken cancellationToken)
+    private async Task RunProbeLoopAsync(Uri probeUri, string host, CancellationToken cancellationToken)
     {
-        await PublishLatencyAsync(host, cancellationToken).ConfigureAwait(false);
-
-        var timer = _probeTimer;
-        if (timer is null || cancellationToken.IsCancellationRequested)
-        {
-            return;
-        }
-
         try
         {
+            await PublishLatencyAsync(probeUri, host, cancellationToken).ConfigureAwait(false);
+
+            var timer = _probeTimer;
+            if (timer is null || cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
             {
-                await PublishLatencyAsync(host, cancellationToken).ConfigureAwait(false);
+                await PublishLatencyAsync(probeUri, host, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -107,9 +133,9 @@ public sealed class ControlUiLatencyService : IDisposable
         }
     }
 
-    private async Task PublishLatencyAsync(string host, CancellationToken cancellationToken)
+    private async Task PublishLatencyAsync(Uri probeUri, string host, CancellationToken cancellationToken)
     {
-        var snapshot = await ProbeAsync(host).ConfigureAwait(false);
+        var snapshot = await ProbeAsync(probeUri, host, cancellationToken).ConfigureAwait(false);
         if (cancellationToken.IsCancellationRequested)
         {
             return;
@@ -148,20 +174,31 @@ public sealed class ControlUiLatencyService : IDisposable
         LatencyUpdated?.Invoke(snapshot);
     }
 
-    private static async Task<ControlUiLatencySnapshot> ProbeAsync(string host)
+    private async Task<ControlUiLatencySnapshot> ProbeAsync(Uri probeUri, string host, CancellationToken cancellationToken)
     {
         try
         {
-            using var ping = new Ping();
-            var reply = await ping.SendPingAsync(host, PingTimeoutMilliseconds).ConfigureAwait(false);
+            using var request = new HttpRequestMessage(HttpMethod.Get, probeUri);
+            request.Headers.TryAddWithoutValidation("Cache-Control", "no-cache, no-store, max-age=0");
+            request.Headers.TryAddWithoutValidation("Pragma", "no-cache");
+            request.Headers.TryAddWithoutValidation("Accept", "application/json,text/plain,*/*");
 
-            return reply.Status == IPStatus.Success
-                ? ControlUiLatencySnapshot.Success(host, reply.RoundtripTime)
-                : ControlUiLatencySnapshot.Failure(host, reply.Status.ToString());
+            var stopwatch = Stopwatch.StartNew();
+            using var response = await _probeHttpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken).ConfigureAwait(false);
+            stopwatch.Stop();
+
+            var proxyHint = response.Headers.TryGetValues("cf-ray", out _) ? " via Cloudflare" : string.Empty;
+            return ControlUiLatencySnapshot.Success(
+                host,
+                stopwatch.ElapsedMilliseconds,
+                $"HTTP {(int)response.StatusCode}{proxyHint}");
         }
-        catch (PingException ex)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            return ControlUiLatencySnapshot.Failure(host, ex.InnerException?.Message ?? ex.Message);
+            throw;
         }
         catch (Exception ex)
         {
@@ -169,10 +206,44 @@ public sealed class ControlUiLatencyService : IDisposable
         }
     }
 
-    private static string? TryGetPingHost(string? controlUiUrl)
+    private static Uri? TryGetProbeUri(string? controlUiUrl)
     {
         if (string.IsNullOrWhiteSpace(controlUiUrl) ||
             !Uri.TryCreate(controlUiUrl, UriKind.Absolute, out var uri))
+        {
+            return null;
+        }
+
+        return uri.Scheme is "http" or "https"
+            ? CreateControlUiConfigUri(uri)
+            : null;
+    }
+
+    private static Uri CreateControlUiConfigUri(Uri controlUiUri)
+    {
+        var builder = new UriBuilder(controlUiUri)
+        {
+            Query = string.Empty,
+            Fragment = string.Empty,
+        };
+
+        var basePath = builder.Path;
+        if (string.IsNullOrWhiteSpace(basePath) || basePath == "/")
+        {
+            basePath = "/";
+        }
+        else if (!basePath.EndsWith('/'))
+        {
+            basePath += "/";
+        }
+
+        builder.Path = $"{basePath}__openclaw/control-ui-config.json";
+        return builder.Uri;
+    }
+
+    private static string? TryGetProbeHost(Uri? uri)
+    {
+        if (uri is null)
         {
             return null;
         }
@@ -206,8 +277,8 @@ public readonly record struct ControlUiLatencySnapshot(
 {
     public static ControlUiLatencySnapshot Unknown => new(ControlUiLatencyState.Unknown, string.Empty, null);
 
-    public static ControlUiLatencySnapshot Success(string host, long roundtripTimeMs) =>
-        new(ControlUiLatencyState.Success, host, roundtripTimeMs);
+    public static ControlUiLatencySnapshot Success(string host, long roundtripTimeMs, string? detail = null) =>
+        new(ControlUiLatencyState.Success, host, roundtripTimeMs, detail);
 
     public static ControlUiLatencySnapshot Failure(string host, string? detail = null) =>
         new(ControlUiLatencyState.Failure, host, null, detail);
