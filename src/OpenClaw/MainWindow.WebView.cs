@@ -13,6 +13,10 @@ public sealed partial class MainWindow
         {
             UpdateRunIndicatorAnimationState();
         }
+        else if (e.PropertyName == nameof(ViewModel.WorkStatusText))
+        {
+            UpdateTrayStatus();
+        }
     }
 
     private void UpdateRunIndicatorAnimationState()

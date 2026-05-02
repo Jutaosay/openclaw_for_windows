@@ -3,6 +3,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenClaw.Helpers;
+using OpenClaw.Services;
 
 namespace OpenClaw;
 
@@ -56,10 +57,12 @@ public sealed partial class MainWindow
 
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {
+        AppWindow.Closing -= OnAppWindowClosing;
         _runIndicatorTimer.Stop();
         _runIndicatorTimer.Tick -= OnRunIndicatorTick;
         _webViewRecreationTimer.Stop();
         _webViewRecreationTimer.Tick -= OnWebViewRecreationTimerTick;
+        DisposeTrayIcon();
         ViewModel.OpenSettingsRequested -= OnOpenSettingsRequested;
         ViewModel.WebViewRecreationRequested -= OnWebViewRecreationRequested;
         ViewModel.ViewLogsRequested -= OnViewLogsRequested;
@@ -70,6 +73,18 @@ public sealed partial class MainWindow
         App.Configuration.FlushDeferredSave();
         App.Logger.Info("Application closing.");
         App.Logger.Dispose();
+    }
+
+    private void OnAppWindowClosing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
+    {
+        if (_trayClosePolicy.GetCloseDisposition(App.Configuration.Settings.CloseToTray) != TrayCloseDisposition.HideToTray ||
+            _trayIconService?.IsAvailable != true)
+        {
+            return;
+        }
+
+        args.Cancel = true;
+        HideMainWindowToTray();
     }
 
     private void OnWindowActivated(object sender, WindowActivatedEventArgs args)
@@ -105,6 +120,13 @@ public sealed partial class MainWindow
         }
         else if (isMinimized && !_isWindowHidden)
         {
+            if (App.Configuration.Settings.MinimizeToTray &&
+                _trayIconService?.IsAvailable == true)
+            {
+                HideMainWindowToTray();
+                return;
+            }
+
             _isWindowHidden = true;
             OnWindowHidden();
         }

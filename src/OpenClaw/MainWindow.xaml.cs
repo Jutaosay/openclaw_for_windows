@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
         SubscribeToViewModelEvents();
         _runIndicatorTimer = CreateRunIndicatorTimer();
         _webViewRecreationTimer = CreateWebViewRecreationTimer();
+        InitializeTrayIcon();
         AttachWindowEventHandlers();
         AttachRootEventHandlers();
         UpdateThemeSelector(App.Configuration.Settings.AppTheme);

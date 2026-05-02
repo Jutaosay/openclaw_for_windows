@@ -61,6 +61,12 @@ public partial class MainViewModel
         private set => SetProperty(ref _latencySummaryBrush, value);
     }
 
+    public string LatencyTooltipText
+    {
+        get => _latencyTooltipText;
+        private set => SetProperty(ref _latencyTooltipText, value);
+    }
+
     public string WorkStatusText
     {
         get => _workStatusText;

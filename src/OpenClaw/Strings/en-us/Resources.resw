@@ -172,6 +172,9 @@
   <data name="SettingsNavLanguage" xml:space="preserve">
     <value>Language</value>
   </data>
+  <data name="SettingsNavShell" xml:space="preserve">
+    <value>More</value>
+  </data>
   <data name="SettingsNavEnvironments" xml:space="preserve">
     <value>Environments</value>
   </data>
@@ -183,6 +186,24 @@
   </data>
   <data name="SettingsLanguageDescription" xml:space="preserve">
     <value>Choose your preferred display language.</value>
+  </data>
+  <data name="SettingsShellTitle" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="SettingsShellDescription" xml:space="preserve">
+    <value>Control how the native window behaves when you minimize or close it.</value>
+  </data>
+  <data name="SettingsMinimizeToTray" xml:space="preserve">
+    <value>Minimize to tray</value>
+  </data>
+  <data name="SettingsMinimizeToTrayDescription" xml:space="preserve">
+    <value>When enabled, the minimize button hides OpenClaw to the system tray instead of leaving it on the taskbar.</value>
+  </data>
+  <data name="SettingsCloseToTray" xml:space="preserve">
+    <value>Close to tray</value>
+  </data>
+  <data name="SettingsCloseToTrayDescription" xml:space="preserve">
+    <value>When enabled, the window close button hides OpenClaw to the tray. Use Exit from the tray menu to close the app.</value>
   </data>
   <data name="SettingsLanguageSystem" xml:space="preserve">
     <value>System Default</value>

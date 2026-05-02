@@ -60,6 +60,12 @@
                         <TextBlock Text="{x:Bind helpers:StringResources.SettingsNavDevTools}" FontSize="13" VerticalAlignment="Center" />
                         </StackPanel>
                     </ListViewItem>
+                    <ListViewItem x:Name="NavShell" Tag="Shell">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE713;" FontSize="14" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsNavShell}" FontSize="13" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListViewItem>
                 </ListView>
             </Border>
 
@@ -89,6 +95,32 @@
                                     Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                     FontSize="12"
                                     FontStyle="Italic" />
+                    </StackPanel>
+
+                    <!-- ======= Panel: Shell ======= -->
+                    <StackPanel x:Name="PanelShell" Spacing="12" Visibility="Collapsed">
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsShellTitle}"
+                                    Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsShellDescription}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="13"
+                                    TextWrapping="Wrap" />
+
+                        <CheckBox Content="{x:Bind helpers:StringResources.SettingsMinimizeToTray}"
+                                  IsChecked="{x:Bind ViewModel.MinimizeToTray, Mode=TwoWay}"
+                                  Margin="0,4,0,0" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsMinimizeToTrayDescription}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="12"
+                                    TextWrapping="Wrap" />
+
+                        <CheckBox Content="{x:Bind helpers:StringResources.SettingsCloseToTray}"
+                                  IsChecked="{x:Bind ViewModel.CloseToTray, Mode=TwoWay}"
+                                  Margin="0,8,0,0" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsCloseToTrayDescription}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="12"
+                                    TextWrapping="Wrap" />
                     </StackPanel>
 
                     <!-- ======= Panel: Environments ======= -->

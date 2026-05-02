@@ -1,6 +1,7 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 
@@ -49,6 +50,7 @@ public sealed partial class MainWindow
 
     private void AttachWindowEventHandlers()
     {
+        AppWindow.Closing += OnAppWindowClosing;
         this.Closed += OnWindowClosed;
         this.Activated += OnWindowActivated;
     }

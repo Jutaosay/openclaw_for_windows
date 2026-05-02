@@ -243,7 +243,8 @@
                     Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
                     BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="14">
+                    CornerRadius="14"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.LatencyTooltipText, Mode=OneWay}">
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            FontSize="11"

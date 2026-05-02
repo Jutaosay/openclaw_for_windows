@@ -172,6 +172,9 @@
   <data name="SettingsNavLanguage" xml:space="preserve">
     <value>语言</value>
   </data>
+  <data name="SettingsNavShell" xml:space="preserve">
+    <value>更多</value>
+  </data>
   <data name="SettingsNavEnvironments" xml:space="preserve">
     <value>环境</value>
   </data>
@@ -183,6 +186,24 @@
   </data>
   <data name="SettingsLanguageDescription" xml:space="preserve">
     <value>选择你偏好的显示语言。</value>
+  </data>
+  <data name="SettingsShellTitle" xml:space="preserve">
+    <value>更多</value>
+  </data>
+  <data name="SettingsShellDescription" xml:space="preserve">
+    <value>控制原生窗口在最小化或关闭时的行为。</value>
+  </data>
+  <data name="SettingsMinimizeToTray" xml:space="preserve">
+    <value>最小化到托盘</value>
+  </data>
+  <data name="SettingsMinimizeToTrayDescription" xml:space="preserve">
+    <value>启用后，点击最小化按钮会把 OpenClaw 隐藏到系统托盘，而不是留在任务栏。</value>
+  </data>
+  <data name="SettingsCloseToTray" xml:space="preserve">
+    <value>关闭到托盘</value>
+  </data>
+  <data name="SettingsCloseToTrayDescription" xml:space="preserve">
+    <value>启用后，点击窗口关闭按钮会把 OpenClaw 隐藏到托盘。要退出应用，请使用托盘菜单里的 Exit。</value>
   </data>
   <data name="SettingsLanguageSystem" xml:space="preserve">
     <value>系统默认</value>

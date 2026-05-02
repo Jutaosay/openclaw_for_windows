@@ -26,6 +26,9 @@ internal static class WindowFrameHelper
     private const uint RedrawWindowInvalidate = 0x0001;
     private const uint RedrawWindowUpdatenow = 0x0100;
     private const uint RedrawWindowFrame = 0x0400;
+    private const int ShowWindowHide = 0;
+    private const int ShowWindowShowNormal = 1;
+    private const int ShowWindowRestore = 9;
 
     public static bool ApplyWindowTheme(
         Window window,
@@ -205,6 +208,31 @@ internal static class WindowFrameHelper
         return hwnd != IntPtr.Zero && IsIconic(hwnd);
     }
 
+    public static void HideWindow(Window window)
+    {
+        var hwnd = WindowNative.GetWindowHandle(window);
+        if (hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        ShowWindow(hwnd, ShowWindowHide);
+    }
+
+    public static void ShowAndActivateWindow(Window window)
+    {
+        var hwnd = WindowNative.GetWindowHandle(window);
+        if (hwnd == IntPtr.Zero)
+        {
+            window.Activate();
+            return;
+        }
+
+        ShowWindow(hwnd, IsIconic(hwnd) ? ShowWindowRestore : ShowWindowShowNormal);
+        window.Activate();
+        SetForegroundWindow(hwnd);
+    }
+
     private static bool ApplyThemeVisualState(
         Window window,
         ElementTheme actualTheme,
@@ -341,6 +369,14 @@ internal static class WindowFrameHelper
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("dwmapi.dll")]
     private static extern int DwmFlush();

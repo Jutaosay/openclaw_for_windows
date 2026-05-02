@@ -13,6 +13,7 @@ public readonly record struct SettingsSaveResult(
 public sealed partial class SettingsDialog
 {
     private const string LanguagePanelTag = "Language";
+    private const string ShellPanelTag = "Shell";
     private const string EnvironmentsPanelTag = "Environments";
     private const string SessionsPanelTag = "Sessions";
     private const string DevToolsPanelTag = "DevTools";

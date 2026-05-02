@@ -88,10 +88,17 @@ public static class StringResources
     // --- Settings Dialog ---
     public static string SettingsTitle => Get("SettingsTitle");
     public static string SettingsNavLanguage => Get("SettingsNavLanguage");
+    public static string SettingsNavShell => Get("SettingsNavShell");
     public static string SettingsNavEnvironments => Get("SettingsNavEnvironments");
     public static string SettingsNavSessions => Get("SettingsNavSessions");
     public static string SettingsNavDevTools => Get("SettingsNavDevTools");
     public static string SettingsLanguageDescription => Get("SettingsLanguageDescription");
+    public static string SettingsShellTitle => Get("SettingsShellTitle");
+    public static string SettingsShellDescription => Get("SettingsShellDescription");
+    public static string SettingsMinimizeToTray => Get("SettingsMinimizeToTray");
+    public static string SettingsMinimizeToTrayDescription => Get("SettingsMinimizeToTrayDescription");
+    public static string SettingsCloseToTray => Get("SettingsCloseToTray");
+    public static string SettingsCloseToTrayDescription => Get("SettingsCloseToTrayDescription");
     public static string SettingsLanguageSystem => Get("SettingsLanguageSystem");
     public static string SettingsLanguageEnglish => Get("SettingsLanguageEnglish");
     public static string SettingsLanguageChineseSimplified => Get("SettingsLanguageChineseSimplified");

@@ -27,6 +27,8 @@ public class SettingsViewModel : INotifyPropertyChanged
     private bool _isEditing;
     private string _selectedLanguage = "System";
     private bool _enableDevLog;
+    private bool _minimizeToTray;
+    private bool _closeToTray;
     private string _validationMessage = string.Empty;
 
     public SettingsViewModel()
@@ -44,6 +46,8 @@ public class SettingsViewModel : INotifyPropertyChanged
         _selectedLanguage = App.Configuration.Settings.AppLanguage ?? "System";
         _originalLanguage = _selectedLanguage;
         _enableDevLog = App.Configuration.Settings.Diagnostics.EnableVerboseRecoveryLogging;
+        _minimizeToTray = App.Configuration.Settings.MinimizeToTray;
+        _closeToTray = App.Configuration.Settings.CloseToTray;
         _validationMessage = StringResources.SettingsValidationDefaultMessage;
     }
 
@@ -96,6 +100,18 @@ public class SettingsViewModel : INotifyPropertyChanged
     {
         get => _enableDevLog;
         set { _enableDevLog = value; OnPropertyChanged(); }
+    }
+
+    public bool MinimizeToTray
+    {
+        get => _minimizeToTray;
+        set { _minimizeToTray = value; OnPropertyChanged(); }
+    }
+
+    public bool CloseToTray
+    {
+        get => _closeToTray;
+        set { _closeToTray = value; OnPropertyChanged(); }
     }
 
     public string ValidationMessage
@@ -225,6 +241,8 @@ public class SettingsViewModel : INotifyPropertyChanged
 
         // Save language
         App.Configuration.Settings.AppLanguage = SelectedLanguage;
+        App.Configuration.Settings.MinimizeToTray = MinimizeToTray;
+        App.Configuration.Settings.CloseToTray = CloseToTray;
         App.Configuration.Settings.Diagnostics.EnableVerboseRecoveryLogging = EnableDevLog;
 
         SyncRenamedEnvironmentProfiles();

@@ -50,6 +50,16 @@ public class AppSettings
     public string AppLanguage { get; set; } = "en-US";
 
     /// <summary>
+    /// Gets or sets whether minimizing the main window hides it to the system tray.
+    /// </summary>
+    public bool MinimizeToTray { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether closing the main window hides it to the system tray.
+    /// </summary>
+    public bool CloseToTray { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets the heartbeat probe interval in seconds. 0 = disabled.
     /// Default is 30s, which works well with Cloudflare Tunnel / reverse proxy idle timeouts (60-100s).
     /// </summary>

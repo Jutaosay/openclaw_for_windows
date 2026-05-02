@@ -19,6 +19,7 @@ public partial class MainViewModel
         AccessSummaryBrush = WarningBrush;
         LatencySummaryText = DefaultLatencySummary;
         LatencySummaryBrush = NeutralBrush;
+        LatencyTooltipText = LatencyTooltipFormatter.Format(_latencyHistory.CreateSummary());
         WorkStatusText = DefaultWorkStatus;
         WorkStatusBrush = WarningBrush;
         SetRunIndicatorMode(RunIndicatorMode.Wait);
@@ -30,7 +31,9 @@ public partial class MainViewModel
     {
         RunOnUiThread(() =>
         {
+            _latencyHistory.Record(snapshot);
             (LatencySummaryText, LatencySummaryBrush) = FormatLatencySummary(snapshot);
+            LatencyTooltipText = LatencyTooltipFormatter.Format(_latencyHistory.CreateSummary());
         });
     }
 

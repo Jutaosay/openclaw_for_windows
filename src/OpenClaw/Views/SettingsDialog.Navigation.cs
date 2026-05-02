@@ -19,6 +19,7 @@ public sealed partial class SettingsDialog
     private void ShowPanel(string tag)
     {
         PanelLanguage.Visibility = ToPanelVisibility(tag == LanguagePanelTag);
+        PanelShell.Visibility = ToPanelVisibility(tag == ShellPanelTag);
         PanelEnvironments.Visibility = ToPanelVisibility(tag == EnvironmentsPanelTag);
         PanelSessions.Visibility = ToPanelVisibility(tag == SessionsPanelTag);
         PanelDevTools.Visibility = ToPanelVisibility(tag == DevToolsPanelTag);

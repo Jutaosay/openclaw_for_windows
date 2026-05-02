@@ -14,9 +14,9 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
     <ApplicationIcon>Assets\WindowIcon.ico</ApplicationIcon>
-    <Version>3.0.6</Version>
-    <AssemblyVersion>3.0.6.0</AssemblyVersion>
-    <FileVersion>3.0.6.0</FileVersion>
+    <Version>3.1.0</Version>
+    <AssemblyVersion>3.1.0.0</AssemblyVersion>
+    <FileVersion>3.1.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,6 +40,7 @@
     <Compile Remove="Services\ConfigurationService.cs" />
     <Compile Remove="Services\ControlUiLatencyService.cs" />
     <Compile Remove="Services\IAppLogger.cs" />
+    <Compile Remove="Services\LatencyHistory.cs" />
     <Compile Remove="Services\LoggingService.cs" />
     <Compile Remove="Services\SessionProbeModels.cs" />
     <Compile Remove="Services\ShellSessionCoordinator.Attach.cs" />
@@ -56,6 +57,7 @@
     <Compile Remove="Services\ShellSessionCoordinator.State.cs" />
     <Compile Remove="Services\ShellSessionCoordinator.StateEffects.cs" />
     <Compile Remove="Services\ShellSessionCoordinator.Telemetry.cs" />
+    <Compile Remove="Services\TrayClosePolicy.cs" />
   </ItemGroup>
 
   <ItemGroup>

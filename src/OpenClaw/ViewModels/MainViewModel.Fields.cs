@@ -11,6 +11,7 @@ public partial class MainViewModel
 {
     private const int HeartbeatIndicatorCount = 12;
     private const int RunIndicatorCount = 12;
+    private const int LatencyHistoryCapacity = 60;
     private const string DefaultHeartbeatSummary = "HB --";
     private const string DefaultModelSummary = "--";
     private const string DefaultAccessSummary = "AUTH --";
@@ -25,6 +26,7 @@ public partial class MainViewModel
     private readonly WebViewService _webViewService = new();
     private readonly HostedUiBridge _hostedUiBridge = new();
     private readonly ControlUiLatencyService _latencyService = new();
+    private readonly LatencyHistory _latencyHistory = new(LatencyHistoryCapacity);
 
     private ShellSessionCoordinator? _coordinator;
     private EnvironmentConfig? _selectedEnvironment;
@@ -44,6 +46,7 @@ public partial class MainViewModel
     private Brush _accessSummaryBrush = NeutralBrush;
     private string _latencySummaryText = DefaultLatencySummary;
     private Brush _latencySummaryBrush = NeutralBrush;
+    private string _latencyTooltipText = LatencyTooltipFormatter.Format(LatencyHistorySummary.Empty);
     private string _workStatusText = DefaultWorkStatus;
     private Brush _workStatusBrush = NeutralBrush;
     private RunIndicatorMode _runIndicatorMode = RunIndicatorMode.Wait;

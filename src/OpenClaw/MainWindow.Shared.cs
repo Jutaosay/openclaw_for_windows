@@ -1,6 +1,7 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.UI.Dispatching;
+using OpenClaw.Services;
 using OpenClaw.ViewModels;
 using OpenClaw.Views;
 
@@ -20,6 +21,8 @@ public sealed partial class MainWindow
     private readonly DispatcherQueueTimer _webViewRecreationTimer;
     private bool _isWindowHidden;
     private SettingsDialog? _settingsWindow;
+    private TrayIconService? _trayIconService;
+    private readonly TrayClosePolicy _trayClosePolicy = new();
     private int _webViewRecreationCount;
     private int _webViewRecreationMergedCount;
     private string _lastInstrumentationEvent = string.Empty;
