@@ -170,7 +170,9 @@ If the page loads but OpenClaw reports origin rejection, check the exact public 
 | Connection Status | Status bar, error InfoBar, retry support |
 | Auto-Reconnect | Retries failed navigation automatically |
 | Heartbeat | Periodic Control UI and transport probe with configurable reconnect thresholds |
+| System Tray | Configurable minimize/close-to-tray behavior with Open OpenClaw, Settings, and Exit actions |
 | Session Isolation | Separate WebView2 profile data per configured environment |
+| Latency Tooltip | Hover the latency badge for recent min/avg/p95/max round-trip stats |
 | Theme | Top-bar segmented switcher for System, Light, and Dark |
 | Language | English, Simplified Chinese, System |
 | Diagnostics | Runtime, network, and session checks |
@@ -181,14 +183,15 @@ If the page loads but OpenClaw reports origin rejection, check the exact public 
 
 ## Settings
 
-The Settings window is organized into four sections:
+The Settings window is organized into five sections:
 
 | Section | Content |
 |---|---|
-| Environments | Add, edit, remove, and choose default hosted Control UI endpoints |
 | Language | Display language |
+| Environments | Add, edit, remove, and choose default hosted Control UI endpoints |
 | Sessions | Clear WebView2 session data for a specific environment |
 | Developer Tools | Diagnostics, logs, DevTools |
+| More | Minimize-to-tray and close-to-tray behavior |
 
 ### Environment URL Rules
 
@@ -204,7 +207,7 @@ All local data is stored under `%LOCALAPPDATA%\OpenClaw\`.
 
 | Path | Content |
 |---|---|
-| `settings.json` | Environment configs, theme, language, heartbeat settings, window state |
+| `settings.json` | Environment configs, theme, language, tray behavior, heartbeat settings, window state |
 | `logs/` | Daily log files |
 | `WebView2Data/` | WebView2 profile data, cookies, cache |
 
@@ -225,6 +228,18 @@ Design principle: remote-first thin shell. The actual OpenClaw runtime lives on 
 ---
 
 ## Recent Changes
+
+### v3.1.0 (2026-05-02)
+
+- Added a system tray icon with status tooltip, minimize/close-to-tray support, and right-click Open OpenClaw, Settings, and Exit actions.
+- Fixed tray initialization by declaring Unicode marshalling for Win32 `*W` entry points, including window class registration, icon loading, and menu text.
+- Fixed tray right-click handling for the `NOTIFYICON_VERSION_4` callback format by reading the event from `LOWORD(lParam)`.
+- Fixed tray menu popup behavior by using a hidden normal owner window instead of a message-only `HWND_MESSAGE` window.
+- Added More settings for minimize-to-tray and close-to-tray behavior.
+- Renamed the Shell settings section to More and moved it to the bottom of the settings navigation.
+- Changed window minimize and close behavior to hide OpenClaw to the tray when enabled and the tray icon is available.
+- Added latency badge hover details for the most recent probe samples, including latest, min, average, p95, and max round-trip time.
+- Synced app, assembly, file, manifest, and About dialog version metadata to `3.1.0`.
 
 ### v3.0.6 (2026-05-02)
 

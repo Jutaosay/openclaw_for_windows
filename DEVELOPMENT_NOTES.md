@@ -52,3 +52,30 @@ Commands used for baseline verification:
 dotnet build OpenClaw.sln -c Debug -p:Platform=x64 --no-restore
 dotnet run --project tests\OpenClaw.Tests\OpenClaw.Tests.csproj -c Debug --no-restore
 ```
+
+## System Tray Win32 Integration
+
+This note records the v3.1.0 tray icon and right-click menu debugging path.
+
+### Symptoms
+
+The tray icon initially failed to appear after minimizing to tray. After the icon appeared, right-clicking the status-bar tray icon did not open the context menu and produced no visible error.
+
+### Root Causes
+
+The first failure came from mixed Win32 string marshalling. The service called explicit `*W` entry points such as `RegisterClassExW`, `CreateWindowExW`, `LoadImageW`, and `AppendMenuW`, but the `DllImport` declarations did not all specify `CharSet.Unicode`. That allowed the registered class name and created window class name to diverge, producing `CreateWindowExW` error `1407`.
+
+The right-click failure had two separate causes:
+
+- `NOTIFYICON_VERSION_4` reports the mouse event in `LOWORD(lParam)` and the icon id in the high word. Comparing the whole `lParam` against `WM_CONTEXTMENU` or `WM_RBUTTONUP` ignores the right-click event.
+- `TrackPopupMenu` needs an owner window that can participate in foreground activation. A message-only `HWND_MESSAGE` window is useful for receiving messages, but it is not a reliable owner for a visible popup menu. Use a hidden normal top-level window instead.
+
+### Implementation Rules
+
+- Every explicit Win32 `*W` import that accepts strings must declare `CharSet = CharSet.Unicode`.
+- Keep the tray callback window alive for the entire tray icon lifetime and destroy it only during `TrayIconService.Dispose()`.
+- When using `NOTIFYICON_VERSION_4`, decode the callback event with a low-word helper before dispatching mouse actions.
+- Use a hidden normal owner window for `TrackPopupMenu`; do not pass `HWND_MESSAGE` as the menu owner.
+- Keep right-click tray commands minimal: Open OpenClaw, Settings, and Exit. Left-click can remain the quick show/hide toggle.
+
+Regression coverage now checks the Unicode imports, `LOWORD(lParam)` callback parsing, the minimal tray command set, and the hidden normal owner-window requirement.
