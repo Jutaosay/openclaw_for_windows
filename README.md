@@ -226,6 +226,24 @@ Design principle: remote-first thin shell. The actual OpenClaw runtime lives on 
 
 ## Recent Changes
 
+### v3.0.6 (2026-05-02)
+
+- Fixed deferred settings saves so updates queued while a previous write is flushing are persisted by a follow-up save.
+- Hardened settings loading against explicit `null` JSON sections for environments, heartbeat, recovery, and diagnostics options.
+- Moved log retention cleanup off the `LoggingService` constructor path and into the background writer task.
+- Switched latency probing to `GET __openclaw/control-ui-config.json` under the configured Control UI base path, with clean cancellation for the initial probe task.
+- Split pure .NET recovery/config/logging code into `OpenClaw.Core` so tests can reference real shared code instead of compiling a growing mix of linked files and stubs.
+- Pinned NuGet package versions, enabled package lock files, and removed the obsolete `RestorePackagesConfig` restore switch.
+- Synced app, assembly, file, manifest, and About dialog version metadata to `3.0.6`.
+
+### v3.0.5 (2026-05-01)
+
+- Hardened settings persistence with atomic writes so interrupted saves no longer risk leaving a truncated `settings.json`.
+- Improved Cloudflare Tunnel behavior by replacing ICMP latency checks with HTTP HEAD RTT probes and honoring the configured hard-refresh cooldown in heartbeat recovery.
+- Reduced local resource buildup by closing replaced WebView2 instances explicitly, tail-reading the log viewer, and applying 14-day log retention.
+- Trimmed UI churn by de-duplicating heartbeat/run indicator property changes and converting the Stop command path to awaitable async execution.
+- Synced app, assembly, file, manifest, and About dialog version metadata to `3.0.5`.
+
 ### v3.0.4 (2026-04-29)
 
 - Fixed the main window top-edge artifact by removing the XAML edge cover workaround and explicitly syncing the WinUI title bar, DWM caption, and DWM border colors.

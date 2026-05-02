@@ -1,9 +1,6 @@
 <Project>
   <PropertyGroup>
-    <!-- Keep restore behavior simple:
-         - SDK-style projects continue using PackageReference restore
-         - If a packages.config project is added later, VS/MSBuild restore it automatically too -->
-    <RestorePackagesConfig>true</RestorePackagesConfig>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
   </PropertyGroup>
 </Project>
