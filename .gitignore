@@ -1,0 +1,92 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+ARM64/
+
+# Visual Studio / MSBuild user state
+.vs/
+*.user
+*.userosscache
+*.suo
+*.rsuser
+*.sln.docstates
+*.cache
+*.tlog
+
+# WinUI / Windows App SDK package output
+[Aa]pp[Pp]ackages/
+[Bb]undle[Aa]rtifacts/
+[Gg]enerated [Ff]iles/
+*_TemporaryKey.pfx
+*.appx
+*.appxbundle
+*.appxupload
+*.appinstaller
+*.msix
+*.msixbundle
+*.msixupload
+*.cer
+*_pkginfo.txt
+
+# .NET / NuGet generated artifacts
+artifacts/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+coverage.*
+*.nupkg
+*.snupkg
+project.assets.json
+project.nuget.cache
+*.csproj.nuget.dgspec.json
+*.csproj.nuget.g.props
+*.csproj.nuget.g.targets
+
+# Keep NuGet lock files tracked for repeatable restore.
+!**/packages.lock.json
+
+# Local SDK and app data caches
+.dotnet/
+.appdata/
+
+# Editor state
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.sln.iml
+*.DotSettings.user
+
+# Local assistant/tooling state
+.claude/settings.local.json
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pfx
+*.key
+*.pem
+
+# Logs and diagnostics
+*.log
+*.binlog
+*.dmp
+*.mdmp
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

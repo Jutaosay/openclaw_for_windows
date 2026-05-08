@@ -79,3 +79,42 @@ The right-click failure had two separate causes:
 - Keep right-click tray commands minimal: Open OpenClaw, Settings, and Exit. Left-click can remain the quick show/hide toggle.
 
 Regression coverage now checks the Unicode imports, `LOWORD(lParam)` callback parsing, the minimal tray command set, and the hidden normal owner-window requirement.
+
+## Single Instance Launch Coordination
+
+v3.1.1 keeps `AllowMultipleInstances` off by default because the common Windows workflow is one remote OpenClaw client parked in the tray. The setting lives under Settings > Advanced as "Multiple instances"; when enabled, launches keep the existing behavior and create another app window.
+
+When multiple instances are disabled, startup creates a named mutex and the primary instance listens on a named pipe for activation requests. A secondary launch loads settings first, detects the mutex owner, sends an activation request to the primary instance, and exits. The primary dispatches that request back to the UI thread and calls `MainWindow.ActivateFromExternalLaunch()`, which restores a tray-hidden window instead of creating another tray icon.
+
+## Window Bounds Persistence
+
+This note records the v3.1.2 fix for a main-window visibility failure after switching the machine to dedicated-GPU direct mode.
+
+### Symptom
+
+The process started normally, WebView2 initialized, and the taskbar/tray entry remained present, but the main window was not visible. Debug output only showed first-chance WinRT and cancellation exceptions; the application exited cleanly when closed.
+
+### Root Cause
+
+The persisted window bounds in `%LOCALAPPDATA%\OpenClaw\settings.json` had been overwritten while the window was minimized or hidden:
+
+```json
+{
+  "windowWidth": 160,
+  "windowHeight": 28,
+  "windowLeft": -32000,
+  "windowTop": -32000
+}
+```
+
+Those coordinates are Windows minimized-window sentinel values, not a user-visible placement. After a display topology change such as dedicated-GPU direct mode, restoring them can leave the WinUI window activated but effectively off-screen or collapsed.
+
+### Implementation Rules
+
+- Never persist bounds while the main window is hidden to tray or minimized.
+- Treat `-32000`-style coordinates as invalid persisted state and reset them to the default visible bounds.
+- Reject very small persisted sizes that match minimized caption-only dimensions.
+- Before moving to saved coordinates, verify that the restored rectangle intersects one of the current `DisplayArea` work areas.
+- If saved coordinates no longer intersect any display, center the window on the current display instead of trusting stale topology.
+
+Regression coverage now checks both sides of the fix: settings load sanitizes minimized sentinel bounds, and `SaveWindowBounds()` skips hidden/minimized windows.
