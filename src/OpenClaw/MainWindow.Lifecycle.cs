@@ -1,9 +1,11 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OpenClaw.Helpers;
 using OpenClaw.Services;
+using Windows.Graphics;
 
 namespace OpenClaw;
 
@@ -19,14 +21,30 @@ public sealed partial class MainWindow
             var width = (int)settings.WindowWidth;
             var height = (int)settings.WindowHeight;
 
-            if (width > 0 && height > 0)
+            if (WindowBoundsUtilities.HasPersistableSize(width, height))
             {
-                appWindow.Resize(new Windows.Graphics.SizeInt32(width, height));
+                appWindow.Resize(new SizeInt32(width, height));
             }
 
-            if (settings.WindowLeft >= 0 && settings.WindowTop >= 0)
+            if (!WindowBoundsUtilities.HasSavedPosition(settings.WindowLeft, settings.WindowTop))
             {
-                appWindow.Move(new Windows.Graphics.PointInt32((int)settings.WindowLeft, (int)settings.WindowTop));
+                return;
+            }
+
+            var left = (int)settings.WindowLeft;
+            var top = (int)settings.WindowTop;
+            var displayWorkAreas = GetDisplayWorkAreas();
+            if (WindowBoundsUtilities.IsVisibleWithinAnyWorkArea(left, top, width, height, displayWorkAreas))
+            {
+                appWindow.Move(new PointInt32(left, top));
+                return;
+            }
+
+            if (TryGetCurrentDisplayWorkArea(appWindow, out var currentWorkArea) &&
+                WindowBoundsUtilities.TryCenterInWorkArea(width, height, currentWorkArea, out var centeredLeft, out var centeredTop))
+            {
+                appWindow.Move(new PointInt32(centeredLeft, centeredTop));
+                App.Logger.Info("Saved window bounds were outside current displays; moved window to the current display.");
             }
         }
         catch (Exception ex)
@@ -37,11 +55,23 @@ public sealed partial class MainWindow
 
     private void SaveWindowBounds()
     {
+        if (_isWindowHidden || WindowFrameHelper.IsWindowMinimized(this))
+        {
+            App.Logger.Info("Skipping window bounds save because the window is hidden or minimized.");
+            return;
+        }
+
         try
         {
             var appWindow = this.AppWindow;
             var pos = appWindow.Position;
             var size = appWindow.Size;
+
+            if (!WindowBoundsUtilities.CanPersistWindowBounds(pos.X, pos.Y, size.Width, size.Height))
+            {
+                App.Logger.Warning($"Skipping invalid window bounds: x={pos.X}, y={pos.Y}, width={size.Width}, height={size.Height}");
+                return;
+            }
 
             App.Configuration.Settings.WindowWidth = size.Width;
             App.Configuration.Settings.WindowHeight = size.Height;
@@ -54,6 +84,45 @@ public sealed partial class MainWindow
             App.Logger.Warning($"Failed to save window bounds: {ex.Message}");
         }
     }
+
+    private static IReadOnlyList<WindowWorkArea> GetDisplayWorkAreas()
+    {
+        try
+        {
+            return DisplayArea.FindAll()
+                .Select(displayArea => ToWindowWorkArea(displayArea.WorkArea))
+                .Where(workArea => workArea.Width > 0 && workArea.Height > 0)
+                .ToArray();
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static bool TryGetCurrentDisplayWorkArea(AppWindow appWindow, out WindowWorkArea workArea)
+    {
+        workArea = default;
+
+        try
+        {
+            var displayArea = DisplayArea.GetFromWindowId(appWindow.Id, DisplayAreaFallback.Primary);
+            if (displayArea is null)
+            {
+                return false;
+            }
+
+            workArea = ToWindowWorkArea(displayArea.WorkArea);
+            return workArea.Width > 0 && workArea.Height > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static WindowWorkArea ToWindowWorkArea(RectInt32 workArea) =>
+        new(workArea.X, workArea.Y, workArea.Width, workArea.Height);
 
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {
@@ -68,6 +137,7 @@ public sealed partial class MainWindow
         ViewModel.ViewLogsRequested -= OnViewLogsRequested;
         ViewModel.ErrorOccurred -= OnError;
         ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        CloseSettingsWindow();
         ViewModel.Dispose();
         SaveWindowBounds();
         App.Configuration.FlushDeferredSave();
@@ -139,6 +209,7 @@ public sealed partial class MainWindow
         {
             _hasInitializedWebViewHost = true;
             DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => ScheduleWebViewRecreation("initial_load"));
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => PrewarmSettingsWindow());
         }
     }
 

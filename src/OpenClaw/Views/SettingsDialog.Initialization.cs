@@ -1,7 +1,6 @@
 // Copyright (c) Lanstack @openclaw. All rights reserved.
 
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
 using Windows.Graphics;
 
 namespace OpenClaw.Views;
@@ -11,7 +10,6 @@ public sealed partial class SettingsDialog
     private void ConfigureWindowChrome()
     {
         Title = Helpers.StringResources.SettingsTitle;
-        SystemBackdrop = new MicaBackdrop();
         AppWindow.SetIcon("Assets\\WindowIcon.ico");
         AppWindow.Resize(new SizeInt32(720, 520));
         this.Activated += OnWindowActivated;
@@ -37,7 +35,7 @@ public sealed partial class SettingsDialog
 
     private void InitializeNavigationState()
     {
-        SetLanguageSelection(ViewModel.SelectedLanguage);
+        PopulateLanguageOptions();
         NavList.SelectedIndex = 0;
     }
 }

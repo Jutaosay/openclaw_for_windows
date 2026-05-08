@@ -10,7 +10,8 @@
     mc:Ignorable="d"
     Title="{x:Bind helpers:StringResources.SettingsTitle}">
 
-    <Grid>
+    <Grid x:Name="SettingsRoot"
+          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <!-- Main content -->
             <RowDefinition Height="*" />
@@ -86,11 +87,7 @@
                         <ComboBox x:Name="LanguageComboBox"
                                   SelectionChanged="OnLanguageSelectionChanged"
                                   MinWidth="220"
-                                  Margin="0,8,0,0">
-                            <ComboBoxItem Content="{x:Bind helpers:StringResources.SettingsLanguageSystem}" Tag="System" />
-                            <ComboBoxItem Content="{x:Bind helpers:StringResources.SettingsLanguageEnglish}" Tag="en-US" />
-                            <ComboBoxItem Content="{x:Bind helpers:StringResources.SettingsLanguageChineseSimplified}" Tag="zh-CN" />
-                        </ComboBox>
+                                  Margin="0,8,0,0" />
                         <TextBlock Text="{x:Bind helpers:StringResources.SettingsLanguageRestartHint}"
                                     Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                     FontSize="12"
@@ -118,6 +115,14 @@
                                   IsChecked="{x:Bind ViewModel.CloseToTray, Mode=TwoWay}"
                                   Margin="0,8,0,0" />
                         <TextBlock Text="{x:Bind helpers:StringResources.SettingsCloseToTrayDescription}"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="12"
+                                    TextWrapping="Wrap" />
+
+                        <CheckBox Content="{x:Bind helpers:StringResources.SettingsAllowMultipleInstances}"
+                                  IsChecked="{x:Bind ViewModel.AllowMultipleInstances, Mode=TwoWay}"
+                                  Margin="0,8,0,0" />
+                        <TextBlock Text="{x:Bind helpers:StringResources.SettingsAllowMultipleInstancesDescription}"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                     FontSize="12"
                                     TextWrapping="Wrap" />

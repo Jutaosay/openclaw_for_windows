@@ -101,11 +101,11 @@ internal static class WindowFrameHelper
                 ? Windows.UI.Color.FromArgb(255, 160, 160, 160)
                 : Windows.UI.Color.FromArgb(255, 128, 128, 128),
             ButtonHoverBackgroundColor = isDark
-                ? Windows.UI.Color.FromArgb(96, 255, 255, 255)
-                : Windows.UI.Color.FromArgb(20, 0, 0, 0),
+                ? Windows.UI.Color.FromArgb(255, 55, 55, 55)
+                : Windows.UI.Color.FromArgb(255, 229, 229, 229),
             ButtonPressedBackgroundColor = isDark
-                ? Windows.UI.Color.FromArgb(144, 255, 255, 255)
-                : Windows.UI.Color.FromArgb(36, 0, 0, 0),
+                ? Windows.UI.Color.FromArgb(255, 68, 68, 68)
+                : Windows.UI.Color.FromArgb(255, 217, 217, 217),
         };
     }
 

@@ -7,14 +7,18 @@ namespace OpenClaw.Views;
 
 public sealed partial class SettingsDialog
 {
-    public void SyncWithCurrentSettings()
-    {
-        ApplyTheme(App.Configuration.Settings.AppTheme);
-    }
-
     private void OnRootLoaded(object sender, RoutedEventArgs e)
     {
         ApplyTheme(App.Configuration.Settings.AppTheme);
+        PopulateLanguageOptions();
+        SetLanguageSelection(ViewModel.SelectedLanguage);
+    }
+
+    public void SyncWithCurrentSettings()
+    {
+        ApplyTheme(App.Configuration.Settings.AppTheme);
+        PopulateLanguageOptions();
+        SetLanguageSelection(ViewModel.SelectedLanguage);
     }
 
     private void OnWindowActivated(object sender, WindowActivatedEventArgs e)
@@ -32,7 +36,7 @@ public sealed partial class SettingsDialog
         }
 
         _hasPerformedInitialTitleBarRefresh = true;
-        WindowFrameHelper.QueueFrameRefresh(this, DispatcherQueue, RefreshTitleBarVisualState, redrawWindow: true);
+        WindowFrameHelper.QueueFrameRefresh(this, DispatcherQueue, RefreshTitleBarVisualState);
     }
 
     private void OnRootActualThemeChanged(FrameworkElement sender, object args)
@@ -43,9 +47,7 @@ public sealed partial class SettingsDialog
             _isDarkThemeActive,
             UpdateTitleBarColors,
             DispatcherQueue,
-            RefreshTitleBarVisualState,
-            redrawWindow: true,
-            repeatRefreshOnDarkTransition: true);
+            RefreshTitleBarVisualState);
     }
 
     private void ApplyTheme(string themeMode)
@@ -56,9 +58,7 @@ public sealed partial class SettingsDialog
             _isDarkThemeActive,
             UpdateTitleBarColors,
             DispatcherQueue,
-            RefreshTitleBarVisualState,
-            redrawWindow: true,
-            repeatRefreshOnDarkTransition: true);
+            RefreshTitleBarVisualState);
     }
 
     private void RefreshTitleBarVisualState()
@@ -68,7 +68,6 @@ public sealed partial class SettingsDialog
             UpdateTitleBarColors(rootElement.ActualTheme);
             rootElement.InvalidateMeasure();
             rootElement.InvalidateArrange();
-            rootElement.UpdateLayout();
         }
     }
 

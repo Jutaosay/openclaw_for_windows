@@ -60,6 +60,11 @@ public class AppSettings
     public bool CloseToTray { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets whether OpenClaw allows multiple app instances on Windows.
+    /// </summary>
+    public bool AllowMultipleInstances { get; set; } = false;
+
+    /// <summary>
     /// Gets or sets the heartbeat probe interval in seconds. 0 = disabled.
     /// Default is 30s, which works well with Cloudflare Tunnel / reverse proxy idle timeouts (60-100s).
     /// </summary>

@@ -11,6 +11,7 @@ namespace OpenClaw;
 public partial class App : Application
 {
     private Window? _mainWindow;
+    private SingleInstanceCoordinator? _singleInstanceCoordinator;
 
     static App()
     {
@@ -45,17 +46,63 @@ public partial class App : Application
         Configuration.Load();
         Logger.Info("Configuration loaded.");
 
+        if (!Configuration.Settings.AllowMultipleInstances && RedirectSecondaryLaunchToPrimaryInstance())
+        {
+            Exit();
+            return;
+        }
+
         // Apply saved language preference
         ApplyLanguage(Configuration.Settings.AppLanguage);
         Logger.Info("Language applied.");
 
         Logger.Info("Creating main window.");
         _mainWindow = new MainWindow();
+        _mainWindow.Closed += OnMainWindowClosed;
         Logger.Info("Main window created.");
         MainWindow = _mainWindow;
         _mainWindow.Activate();
 
         Logger.Info("Main window activated.");
+    }
+
+    private bool RedirectSecondaryLaunchToPrimaryInstance()
+    {
+        _singleInstanceCoordinator = SingleInstanceCoordinator.CreatePrimaryOrSecondary(Logger);
+        if (_singleInstanceCoordinator.IsPrimary)
+        {
+            _singleInstanceCoordinator.ActivationRequested += OnPrimaryInstanceActivationRequested;
+            _singleInstanceCoordinator.StartListening();
+            return false;
+        }
+
+        Logger.Info("Secondary launch detected; requesting primary instance activation.");
+        SingleInstanceCoordinator.RequestActivationOfPrimaryInstance(Logger);
+        _singleInstanceCoordinator.Dispose();
+        _singleInstanceCoordinator = null;
+        return true;
+    }
+
+    private void OnPrimaryInstanceActivationRequested()
+    {
+        Logger.Info("Primary instance activation requested.");
+        if (_mainWindow is not MainWindow mainWindow)
+        {
+            return;
+        }
+
+        mainWindow.DispatcherQueue.TryEnqueue(mainWindow.ActivateFromExternalLaunch);
+    }
+
+    private void OnMainWindowClosed(object sender, WindowEventArgs args)
+    {
+        if (_mainWindow is not null)
+        {
+            _mainWindow.Closed -= OnMainWindowClosed;
+        }
+
+        _singleInstanceCoordinator?.Dispose();
+        _singleInstanceCoordinator = null;
     }
 
     /// <summary>

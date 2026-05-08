@@ -19,6 +19,7 @@ public sealed partial class SettingsDialog
     private const string DevToolsPanelTag = "DevTools";
     private bool _hasPerformedInitialTitleBarRefresh;
     private bool _isDarkThemeActive;
+    private bool _isSyncingLanguageSelection;
 
     public SettingsViewModel ViewModel { get; } = new();
 

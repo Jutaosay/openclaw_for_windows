@@ -173,7 +173,7 @@
     <value>Language</value>
   </data>
   <data name="SettingsNavShell" xml:space="preserve">
-    <value>More</value>
+    <value>Advanced</value>
   </data>
   <data name="SettingsNavEnvironments" xml:space="preserve">
     <value>Environments</value>
@@ -188,7 +188,7 @@
     <value>Choose your preferred display language.</value>
   </data>
   <data name="SettingsShellTitle" xml:space="preserve">
-    <value>More</value>
+    <value>Advanced</value>
   </data>
   <data name="SettingsShellDescription" xml:space="preserve">
     <value>Control how the native window behaves when you minimize or close it.</value>
@@ -204,6 +204,12 @@
   </data>
   <data name="SettingsCloseToTrayDescription" xml:space="preserve">
     <value>When enabled, the window close button hides OpenClaw to the tray. Use Exit from the tray menu to close the app.</value>
+  </data>
+  <data name="SettingsAllowMultipleInstances" xml:space="preserve">
+    <value>Multiple instances</value>
+  </data>
+  <data name="SettingsAllowMultipleInstancesDescription" xml:space="preserve">
+    <value>Allow multiple instance of Openclaw for windows</value>
   </data>
   <data name="SettingsLanguageSystem" xml:space="preserve">
     <value>System Default</value>

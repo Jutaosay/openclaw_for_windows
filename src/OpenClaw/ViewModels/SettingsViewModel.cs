@@ -29,6 +29,7 @@ public class SettingsViewModel : INotifyPropertyChanged
     private bool _enableDevLog;
     private bool _minimizeToTray;
     private bool _closeToTray;
+    private bool _allowMultipleInstances;
     private string _validationMessage = string.Empty;
 
     public SettingsViewModel()
@@ -48,6 +49,7 @@ public class SettingsViewModel : INotifyPropertyChanged
         _enableDevLog = App.Configuration.Settings.Diagnostics.EnableVerboseRecoveryLogging;
         _minimizeToTray = App.Configuration.Settings.MinimizeToTray;
         _closeToTray = App.Configuration.Settings.CloseToTray;
+        _allowMultipleInstances = App.Configuration.Settings.AllowMultipleInstances;
         _validationMessage = StringResources.SettingsValidationDefaultMessage;
     }
 
@@ -112,6 +114,12 @@ public class SettingsViewModel : INotifyPropertyChanged
     {
         get => _closeToTray;
         set { _closeToTray = value; OnPropertyChanged(); }
+    }
+
+    public bool AllowMultipleInstances
+    {
+        get => _allowMultipleInstances;
+        set { _allowMultipleInstances = value; OnPropertyChanged(); }
     }
 
     public string ValidationMessage
@@ -243,6 +251,7 @@ public class SettingsViewModel : INotifyPropertyChanged
         App.Configuration.Settings.AppLanguage = SelectedLanguage;
         App.Configuration.Settings.MinimizeToTray = MinimizeToTray;
         App.Configuration.Settings.CloseToTray = CloseToTray;
+        App.Configuration.Settings.AllowMultipleInstances = AllowMultipleInstances;
         App.Configuration.Settings.Diagnostics.EnableVerboseRecoveryLogging = EnableDevLog;
 
         SyncRenamedEnvironmentProfiles();

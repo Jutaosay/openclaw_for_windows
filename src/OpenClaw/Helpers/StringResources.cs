@@ -99,6 +99,8 @@ public static class StringResources
     public static string SettingsMinimizeToTrayDescription => Get("SettingsMinimizeToTrayDescription");
     public static string SettingsCloseToTray => Get("SettingsCloseToTray");
     public static string SettingsCloseToTrayDescription => Get("SettingsCloseToTrayDescription");
+    public static string SettingsAllowMultipleInstances => Get("SettingsAllowMultipleInstances");
+    public static string SettingsAllowMultipleInstancesDescription => Get("SettingsAllowMultipleInstancesDescription");
     public static string SettingsLanguageSystem => Get("SettingsLanguageSystem");
     public static string SettingsLanguageEnglish => Get("SettingsLanguageEnglish");
     public static string SettingsLanguageChineseSimplified => Get("SettingsLanguageChineseSimplified");

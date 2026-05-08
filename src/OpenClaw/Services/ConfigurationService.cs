@@ -75,8 +75,13 @@ public class ConfigurationService
                     var settings = JsonSerializer.Deserialize(json, AppSettingsJsonContext.Default.AppSettings);
                     if (settings is not null)
                     {
-                        NormalizeSettings(settings, json);
+                        var settingsChanged = NormalizeSettings(settings, json);
                         Settings = settings;
+                        if (settingsChanged)
+                        {
+                            Save();
+                        }
+
                         return;
                     }
                 }
@@ -219,16 +224,51 @@ public class ConfigurationService
         return GetDefaultEnvironment();
     }
 
-    private static void NormalizeSettings(AppSettings settings, string? rawJson = null)
+    private static bool NormalizeSettings(AppSettings settings, string? rawJson = null)
     {
-        settings.Environments ??= [];
-        settings.RecoveryPolicy ??= new RecoveryPolicyOptions();
-        settings.Heartbeat ??= new HeartbeatOptions();
-        settings.Diagnostics ??= new DiagnosticsOptions();
-        settings.Heartbeat.IntervalSeconds = Math.Max(0, settings.Heartbeat.IntervalSeconds);
-        settings.Heartbeat.FailureThreshold = Math.Max(1, settings.Heartbeat.FailureThreshold);
-        settings.Heartbeat.ConnectingThreshold = Math.Max(1, settings.Heartbeat.ConnectingThreshold);
-        settings.HeartbeatIntervalSeconds = Math.Max(0, settings.HeartbeatIntervalSeconds);
+        var changed = false;
+
+        if (settings.Environments is null)
+        {
+            settings.Environments = [];
+            changed = true;
+        }
+
+        if (settings.RecoveryPolicy is null)
+        {
+            settings.RecoveryPolicy = new RecoveryPolicyOptions();
+            changed = true;
+        }
+
+        if (settings.Heartbeat is null)
+        {
+            settings.Heartbeat = new HeartbeatOptions();
+            changed = true;
+        }
+
+        if (settings.Diagnostics is null)
+        {
+            settings.Diagnostics = new DiagnosticsOptions();
+            changed = true;
+        }
+
+        changed |= NormalizeWindowBounds(settings);
+
+        var normalizedHeartbeatInterval = Math.Max(0, settings.Heartbeat.IntervalSeconds);
+        changed |= normalizedHeartbeatInterval != settings.Heartbeat.IntervalSeconds;
+        settings.Heartbeat.IntervalSeconds = normalizedHeartbeatInterval;
+
+        var normalizedHeartbeatFailureThreshold = Math.Max(1, settings.Heartbeat.FailureThreshold);
+        changed |= normalizedHeartbeatFailureThreshold != settings.Heartbeat.FailureThreshold;
+        settings.Heartbeat.FailureThreshold = normalizedHeartbeatFailureThreshold;
+
+        var normalizedHeartbeatConnectingThreshold = Math.Max(1, settings.Heartbeat.ConnectingThreshold);
+        changed |= normalizedHeartbeatConnectingThreshold != settings.Heartbeat.ConnectingThreshold;
+        settings.Heartbeat.ConnectingThreshold = normalizedHeartbeatConnectingThreshold;
+
+        var normalizedLegacyHeartbeatInterval = Math.Max(0, settings.HeartbeatIntervalSeconds);
+        changed |= normalizedLegacyHeartbeatInterval != settings.HeartbeatIntervalSeconds;
+        settings.HeartbeatIntervalSeconds = normalizedLegacyHeartbeatInterval;
 
         var hasLegacyInterval = false;
         var hasHeartbeatObject = false;
@@ -257,12 +297,41 @@ public class ConfigurationService
 
         if (hasLegacyInterval && (!hasHeartbeatObject || !hasHeartbeatInterval))
         {
+            changed |= settings.Heartbeat.IntervalSeconds != settings.HeartbeatIntervalSeconds;
+            changed |= settings.Heartbeat.EnableHeartbeat != (settings.HeartbeatIntervalSeconds > 0);
             settings.Heartbeat.IntervalSeconds = settings.HeartbeatIntervalSeconds;
             settings.Heartbeat.EnableHeartbeat = settings.HeartbeatIntervalSeconds > 0;
         }
 
-        settings.HeartbeatIntervalSeconds = settings.Heartbeat.EnableHeartbeat
+        var synchronizedHeartbeatInterval = settings.Heartbeat.EnableHeartbeat
             ? settings.Heartbeat.IntervalSeconds
             : 0;
+        changed |= settings.HeartbeatIntervalSeconds != synchronizedHeartbeatInterval;
+        settings.HeartbeatIntervalSeconds = synchronizedHeartbeatInterval;
+
+        return changed;
+    }
+
+    private static bool NormalizeWindowBounds(AppSettings settings)
+    {
+        if (!WindowBoundsUtilities.HasPersistableSize(settings.WindowWidth, settings.WindowHeight) ||
+            WindowBoundsUtilities.HasMinimizedSentinelPosition(settings.WindowLeft, settings.WindowTop))
+        {
+            settings.WindowWidth = WindowBoundsUtilities.DefaultWindowWidth;
+            settings.WindowHeight = WindowBoundsUtilities.DefaultWindowHeight;
+            settings.WindowLeft = -1;
+            settings.WindowTop = -1;
+            return true;
+        }
+
+        if (!WindowBoundsUtilities.HasSavedPosition(settings.WindowLeft, settings.WindowTop) &&
+            (settings.WindowLeft != -1 || settings.WindowTop != -1))
+        {
+            settings.WindowLeft = -1;
+            settings.WindowTop = -1;
+            return true;
+        }
+
+        return false;
     }
 }

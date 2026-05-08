@@ -30,6 +30,22 @@ public sealed partial class MainWindow
         ActivateSettingsWindow();
     }
 
+    private void PrewarmSettingsWindow()
+    {
+        if (_settingsWindow is not null)
+        {
+            return;
+        }
+
+        _settingsWindow = CreateSettingsWindow();
+        _settingsWindow.SyncWithCurrentSettings();
+    }
+
+    private void QueueSettingsWindowPrewarm()
+    {
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => PrewarmSettingsWindow());
+    }
+
     private void OnSettingsSaved(SettingsSaveResult saveResult)
     {
         HandleSettingsSaved(saveResult);
@@ -68,6 +84,21 @@ public sealed partial class MainWindow
         _settingsWindow.SettingsSaved -= OnSettingsSaved;
         _settingsWindow.Closed -= OnSettingsWindowClosed;
         _settingsWindow = null;
+        QueueSettingsWindowPrewarm();
+    }
+
+    private void CloseSettingsWindow()
+    {
+        if (_settingsWindow is null)
+        {
+            return;
+        }
+
+        var settingsWindow = _settingsWindow;
+        _settingsWindow = null;
+        settingsWindow.SettingsSaved -= OnSettingsSaved;
+        settingsWindow.Closed -= OnSettingsWindowClosed;
+        settingsWindow.Close();
     }
 
     private void HandleSettingsSaved(SettingsSaveResult saveResult)

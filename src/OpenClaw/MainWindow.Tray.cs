@@ -77,6 +77,11 @@ public sealed partial class MainWindow
         _trayIconService?.UpdateStatus(ViewModel.WorkStatusText);
     }
 
+    internal void ActivateFromExternalLaunch()
+    {
+        ShowMainWindowFromTray();
+    }
+
     private void OnTrayToggleVisibilityRequested()
     {
         DispatcherQueue.TryEnqueue(() =>

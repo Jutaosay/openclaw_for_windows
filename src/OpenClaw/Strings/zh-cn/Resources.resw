@@ -173,7 +173,7 @@
     <value>语言</value>
   </data>
   <data name="SettingsNavShell" xml:space="preserve">
-    <value>更多</value>
+    <value>高级</value>
   </data>
   <data name="SettingsNavEnvironments" xml:space="preserve">
     <value>环境</value>
@@ -188,7 +188,7 @@
     <value>选择你偏好的显示语言。</value>
   </data>
   <data name="SettingsShellTitle" xml:space="preserve">
-    <value>更多</value>
+    <value>高级</value>
   </data>
   <data name="SettingsShellDescription" xml:space="preserve">
     <value>控制原生窗口在最小化或关闭时的行为。</value>
@@ -204,6 +204,12 @@
   </data>
   <data name="SettingsCloseToTrayDescription" xml:space="preserve">
     <value>启用后，点击窗口关闭按钮会把 OpenClaw 隐藏到托盘。要退出应用，请使用托盘菜单里的 Exit。</value>
+  </data>
+  <data name="SettingsAllowMultipleInstances" xml:space="preserve">
+    <value>多开实例</value>
+  </data>
+  <data name="SettingsAllowMultipleInstancesDescription" xml:space="preserve">
+    <value>允许在 Windows 上打开多个 OpenClaw 实例。</value>
   </data>
   <data name="SettingsLanguageSystem" xml:space="preserve">
     <value>系统默认</value>
