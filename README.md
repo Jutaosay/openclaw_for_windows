@@ -1,5 +1,7 @@
 # OpenClaw Manager
 
+**Language:** English | [简体中文](readme_zh.md)
+
 Lightweight Windows-native OpenClaw remote management shell built with WinUI 3 and WebView2.
 
 OpenClaw Manager is a thin desktop shell for the hosted OpenClaw Control UI. It is designed for remote Gateway deployments running on a VPS and exposed through Cloudflare Tunnel, reverse proxy, or another public HTTPS origin.
@@ -57,6 +59,7 @@ Claw_winui3/
 |-- OpenClaw.sln
 |-- DEVELOPMENT_NOTES.md
 |-- README.md
+|-- readme_zh.md
 |-- src/
 |   |-- OpenClaw/
 |   |   |-- OpenClaw.csproj
@@ -117,7 +120,7 @@ Windows 11 usually already includes WebView2 Runtime. Windows 10 users may need 
 
 - The solution uses SDK-style projects with `PackageReference`.
 - Repository-local `packages/` folders are not required and can be deleted safely.
-- A solution-level `[Directory.Build.props](/C:/Users/Zen/Repo/Codings/Claw_winui3/Directory.Build.props)` enables `RestorePackagesConfig=true` so full Visual Studio / MSBuild builds still auto-restore if a future `packages.config` project is added.
+- A solution-level [Directory.Build.props](Directory.Build.props) enables `RestorePackagesConfig=true` so full Visual Studio / MSBuild builds still auto-restore if a future `packages.config` project is added.
 - The expected workflow after clearing local caches is simply:
 
 ```powershell
@@ -135,7 +138,7 @@ See [DEVELOPMENT_NOTES.md](DEVELOPMENT_NOTES.md) for lessons learned from native
 
 ### Visual Studio
 
-1. Open [OpenClaw.sln](/C:/Users/Zen/Repo/Codings/Claw_winui3/OpenClaw.sln) in Visual Studio 2026.
+1. Open [OpenClaw.sln](OpenClaw.sln) in Visual Studio 2026.
 2. Set solution platform to `x64`.
 3. Press `F5` to run.
 
@@ -237,6 +240,13 @@ Design principle: remote-first thin shell. The actual OpenClaw runtime lives on 
 ---
 
 ## Recent Changes
+
+### v3.1.3 (2026-05-08)
+
+- Fixed taskbar/system restore after minimizing to tray by restoring the minimized HWND placement before hiding the window.
+- Covered the remaining dedicated-GPU direct mode restore path where Windows could otherwise keep the main window at `160x28` and `-32000,-32000` after taskbar activation.
+- Added regression coverage to ensure tray hiding restores minimized placement before calling `SW_HIDE`.
+- Synced app, assembly, file, package manifest, application manifest, and About dialog version metadata to `3.1.3`.
 
 ### v3.1.2 (2026-05-08)
 
